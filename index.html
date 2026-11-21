@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro dei Medimaghi</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪄</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --notte:#0e1020; --velo:#1b1838; --viola:#2d2358; --oro:#d9b56b; --oro-chiaro:#f1dba4;
+  --dittamo:#7fd8ae; --pergamena:#efe6d2; --muto:#a79fc4; --errore:#ff8a8a;
+  --font-t:'Cinzel','Trajan Pro',Georgia,serif; --font-b:'EB Garamond',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--font-b); font-size:19px; line-height:1.55; color:var(--pergamena);
+  background:radial-gradient(1200px 700px at 50% -10%,var(--viola),transparent 70%),var(--notte);
+  background-attachment:fixed; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+h1,h2,h3{font-family:var(--font-t);font-weight:700;margin:0;letter-spacing:.04em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--dittamo);outline-offset:3px}
+.hidden{display:none!important}
+
+/* Scintille */
+.motes{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.motes i{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;background:var(--oro-chiaro);
+  box-shadow:0 0 8px 2px rgba(241,219,164,.7);opacity:0;animation:sale linear infinite}
+@keyframes sale{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.9}100%{transform:translateY(-105vh) translateX(var(--dx));opacity:0}}
+@media (prefers-reduced-motion:reduce){.motes{display:none}*{animation:none!important;transition:none!important}}
+
+main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:28px 18px 60px}
+
+/* Schermate di ingresso */
+.soglia{min-height:80vh;display:grid;place-items:center}
+.pergamena{
+  width:100%;max-width:440px;padding:34px 30px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(45,35,88,.75),rgba(27,24,56,.85));
+  border:1px solid rgba(217,181,107,.45);box-shadow:0 0 0 4px rgba(14,16,32,.6),0 0 60px rgba(127,216,174,.08),0 20px 50px rgba(0,0,0,.5);
+  text-align:center;
+}
+.sigillo{font-size:46px;line-height:1;filter:drop-shadow(0 0 14px rgba(127,216,174,.6))}
+.pergamena h1{font-size:26px;margin:12px 0 6px;color:var(--oro-chiaro)}
+.pergamena p{margin:0 0 20px;color:var(--muto);font-style:italic}
+label{display:block;text-align:left;font-size:16px;color:var(--muto);margin:14px 0 5px}
+input,select{width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(217,181,107,.35);background:rgba(14,16,32,.7)}
+select option{background:var(--velo)}
+.btn{
+  margin-top:22px;width:100%;padding:12px 18px;border-radius:999px;cursor:pointer;
+  font-family:var(--font-t);font-weight:700;letter-spacing:.06em;color:var(--notte);
+  background:linear-gradient(180deg,var(--oro-chiaro),var(--oro));border:0;transition:transform .15s,box-shadow .15s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(217,181,107,.4)}
+.errore{min-height:1.4em;margin:12px 0 0;color:var(--errore);font-style:normal!important;font-size:17px}
+.avviso{padding:14px 16px;border:1px solid var(--errore);border-radius:10px;background:rgba(255,138,138,.08);margin:0 0 18px;text-align:left}
+
+/* Intestazione */
+header.top{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:26px}
+header.top h1{font-size:24px;color:var(--oro-chiaro)}
+.io{display:flex;align-items:center;gap:10px;color:var(--muto)}
+.io b{color:var(--pergamena);font-weight:500}
+.link{background:none;border:0;color:var(--dittamo);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
+
+/* Il calderone: pulsante turno */
+.turno{display:grid;place-items:center;text-align:center;padding:10px 0 34px}
+.orb{
+  width:210px;height:210px;border-radius:50%;cursor:pointer;border:2px solid var(--dittamo);
+  font-family:var(--font-t);font-weight:700;font-size:20px;letter-spacing:.06em;color:var(--pergamena);
+  background:radial-gradient(circle at 50% 35%,rgba(127,216,174,.4),rgba(127,216,174,.08) 65%);
+  box-shadow:0 0 40px rgba(127,216,174,.35),inset 0 0 30px rgba(127,216,174,.25);
+  animation:respira 3.6s ease-in-out infinite;transition:transform .2s;
+}
+.orb:hover{transform:scale(1.03)}
+.orb.attivo{border-color:var(--oro);background:radial-gradient(circle at 50% 35%,rgba(217,181,107,.45),rgba(217,181,107,.08) 65%);
+  box-shadow:0 0 44px rgba(217,181,107,.4),inset 0 0 30px rgba(217,181,107,.25)}
+@keyframes respira{50%{box-shadow:0 0 70px rgba(127,216,174,.55),inset 0 0 40px rgba(127,216,174,.35)}}
+.orb.attivo{animation-name:respiraoro}
+@keyframes respiraoro{50%{box-shadow:0 0 70px rgba(217,181,107,.6),inset 0 0 40px rgba(217,181,107,.35)}}
+.stato{margin-top:16px;color:var(--muto);font-style:italic;min-height:1.5em}
+.stato b{color:var(--oro-chiaro);font-style:normal}
+
+/* Sezioni */
+section.blocco{margin-bottom:34px}
+section.blocco>h2{font-size:19px;color:var(--oro);margin-bottom:6px}
+section.blocco>h2::after{content:"";display:block;height:1px;margin-top:8px;background:linear-gradient(90deg,var(--oro),transparent)}
+.vuoto{color:var(--muto);font-style:italic;padding:10px 0}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;cursor:pointer;
+  background:rgba(45,35,88,.6);border:1px solid var(--casa,#888);transition:background .15s;
+}
+.chip:hover{background:rgba(45,35,88,1)}
+.chip .pt{width:9px;height:9px;border-radius:50%;background:var(--casa,#888)}
+.chip.live .pt{box-shadow:0 0 0 3px rgba(127,216,174,.35);background:var(--dittamo)}
+.giorno{margin-top:20px}
+.giorno h3{font-size:15px;color:var(--oro-chiaro);text-transform:capitalize;margin-bottom:8px}
+.riga{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:9px 12px;border-radius:8px;background:rgba(27,24,56,.7);margin-bottom:6px;border-left:3px solid var(--casa,#888)}
+.riga .nome{cursor:pointer;background:none;border:0;text-align:left;padding:0;color:var(--pergamena)}
+.riga .nome:hover{color:var(--oro-chiaro);text-decoration:underline;text-underline-offset:3px}
+.riga small{color:var(--muto)}
+.dur{font-variant-numeric:tabular-nums;color:var(--oro-chiaro)}
+.dur.on{color:var(--dittamo)}
+@media (max-width:560px){.riga{grid-template-columns:1fr auto}.riga .orari{grid-column:1/-1;order:3}}
+
+/* Dettaglio medimago */
+dialog{max-width:480px;width:calc(100% - 28px);border-radius:14px;border:1px solid rgba(217,181,107,.5);padding:26px;
+  background:linear-gradient(180deg,#2a2152,#17142f);color:var(--pergamena)}
+dialog::backdrop{background:rgba(5,6,16,.75)}
+dialog h2{color:var(--oro-chiaro);font-size:22px}
+.tot{margin:16px 0;padding:16px;border-radius:10px;text-align:center;background:rgba(127,216,174,.08);border:1px solid rgba(127,216,174,.4)}
+.tot .n{font-family:var(--font-t);font-size:34px;color:var(--dittamo);line-height:1.1}
+.tot span{color:var(--muto)}
+.storico{max-height:200px;overflow:auto;margin:0;padding:0;list-style:none}
+.storico li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(167,159,196,.2)}
+.chiudi{margin-top:18px;width:100%}
+</style>
+</head>
+<body>
+<div class="motes" id="motes" aria-hidden="true"></div>
+<main>
+
+  <!-- 1. Password -->
+  <div class="soglia" id="vPass">
+    <form class="pergamena" id="fPass" autocomplete="off">
+      <div class="sigillo">🪄</div>
+      <h1>Registro dei Medimaghi</h1>
+      <p>Pronuncia la parola d'ordine per entrare.</p>
+      <label for="pw">Password</label>
+      <input id="pw" type="password" required>
+      <button class="btn" type="submit">Entra</button>
+      <p class="errore" id="ePass" role="alert"></p>
+    </form>
+  </div>
+
+  <!-- 2. Registrazione -->
+  <div class="soglia hidden" id="vReg">
+    <form class="pergamena" id="fReg" autocomplete="off">
+      <div class="sigillo">📜</div>
+      <h1>Registra il tuo Medimago</h1>
+      <p>Se ti sei già registrato, inserisci gli stessi dati per ritrovare il tuo registro.</p>
+      <label for="nome">Nome</label>
+      <input id="nome" required maxlength="30">
+      <label for="cognome">Cognome</label>
+      <input id="cognome" required maxlength="30">
+      <label for="casa">Casa di appartenenza</label>
+      <select id="casa" required>
+        <option value="" disabled selected>Scegli la tua casa</option>
+        <option>Grifondoro</option><option>Serpeverde</option><option>Corvonero</option><option>Tassorosso</option>
+      </select>
+      <button class="btn" type="submit">Registrati</button>
+      <p class="errore" id="eReg" role="alert"></p>
+    </form>
+  </div>
+
+  <!-- 3. Registro turni -->
+  <div class="hidden" id="vApp">
+    <header class="top">
+      <h1>🪄 Registro dei Medimaghi</h1>
+      <div class="io"><span>Medimago <b id="chiSono"></b></span><button class="link" id="esci" type="button">Cambia medimago</button></div>
+    </header>
+
+    <div class="avviso hidden" id="avvisoCfg">Il database non è ancora collegato. Apri <b>index.html</b>, incolla la configurazione Firebase al posto di <b>INCOLLA_QUI</b> e ricarica la pagina.</div>
+
+    <div class="turno">
+      <button class="orb" id="orb" type="button">Inizia turno</button>
+      <div class="stato" id="stato"></div>
+    </div>
+
+    <section class="blocco">
+      <h2>In servizio adesso</h2>
+      <div class="chips" id="inServizio"></div>
+    </section>
+
+    <section class="blocco">
+      <h2>Tutti i Medimaghi</h2>
+      <div class="chips" id="elenco"></div>
+    </section>
+
+    <section class="blocco">
+      <h2>Turni per giorno</h2>
+      <div id="giorni"></div>
+    </section>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <h2 id="dNome"></h2>
+  <div id="dCasa" style="color:var(--muto)"></div>
+  <div class="tot"><div class="n" id="dOre"></div><span id="dInfo"></span></div>
+  <ul class="storico" id="dStorico"></ul>
+  <button class="btn chiudi" id="dChiudi" type="button">Chiudi</button>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============ CONFIGURAZIONE ============ */
+// Hash SHA-256 della password. Quella predefinita è: dittamo
+// Per cambiarla vedi la guida (README) allegata.
+const PASSWORD_HASH = "e2d56f6ef2b915328a786f47fd84a845723011520bb78d97028871334f5e9afe";
+
+// Configurazione Firebase (Impostazioni progetto > Le tue app > Web)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBdDlRcUyVrDlm7dxI7fVkF9r1ivsmNhGo",
+  authDomain: "medimaghi.firebaseapp.com",
+  projectId: "medimaghi",
+  appId: "615544192668:web:d81b3758c39b5a33b3f759"
+};
+/* ========================================= */
+
+const COLORI = {Grifondoro:"#e0584b",Serpeverde:"#4fbf7a",Corvonero:"#5b8def",Tassorosso:"#e8c547"};
+const $ = id => document.getElementById(id);
+const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Scintille
+(function(){const m=$('motes');for(let i=0;i<26;i++){const e=document.createElement('i');
+  e.style.left=Math.random()*100+'%';e.style.setProperty('--dx',(Math.random()*120-60)+'px');
+  e.style.animationDuration=(9+Math.random()*12)+'s';e.style.animationDelay=(-Math.random()*20)+'s';
+  const s=2+Math.random()*3;e.style.width=e.style.height=s+'px';m.appendChild(e);}})();
+
+// Database
+const configurato = !Object.values(FIREBASE_CONFIG).some(v=>v==="INCOLLA_QUI");
+let db=null;
+if(configurato){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();}
+
+let io=null, medimaghi=[], turni=[];
+try{io=JSON.parse(LS.get('medimago')||'null')}catch(e){}
+
+const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const idDa = (n,c) => (n+'-'+c).toLowerCase().normalize('NFD').replace(/[^a-z0-9-]/g,'');
+
+function mostra(v){['vPass','vReg','vApp'].forEach(x=>$(x).classList.toggle('hidden',x!==v));}
+function avvia(){
+  if(LS.get('sbloccato')!=='1') return mostra('vPass');
+  if(!io) return mostra('vReg');
+  mostra('vApp'); $('chiSono').textContent=io.nome+' '+io.cognome;
+  $('avvisoCfg').classList.toggle('hidden',configurato);
+  if(configurato) ascolta(); render();
+}
+
+// 1. Password
+$('fPass').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(await sha($('pw').value.trim())===PASSWORD_HASH){LS.set('sbloccato','1');$('pw').value='';$('ePass').textContent='';avvia();}
+  else $('ePass').textContent='Parola d\'ordine errata. Riprova.';
+});
+
+// 2. Registrazione
+$('fReg').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const nome=$('nome').value.trim(),cognome=$('cognome').value.trim(),casa=$('casa').value;
+  if(!nome||!cognome||!casa) return;
+  const m={id:idDa(nome,cognome),nome,cognome,casa};
+  try{ if(db) await db.collection('medimaghi').doc(m.id).set(m,{merge:true}); }
+  catch(err){ $('eReg').textContent='Impossibile salvare: controlla la connessione e le regole del database.'; return; }
+  io=m; LS.set('medimago',JSON.stringify(m)); $('eReg').textContent=''; avvia();
+});
+
+$('esci').addEventListener('click',()=>{LS.del('medimago');io=null;avvia();});
+
+// Dati in tempo reale
+let ascoltando=false;
+function ascolta(){
+  if(ascoltando) return; ascoltando=true;
+  db.collection('medimaghi').onSnapshot(s=>{medimaghi=s.docs.map(d=>d.data());render();});
+  db.collection('turni').onSnapshot(s=>{turni=s.docs.map(d=>({_id:d.id,...d.data()}));render();});
+}
+
+// Turni
+const mioTurno = () => turni.find(t=>t.medimagoId===io.id && !t.fine);
+$('orb').addEventListener('click',async()=>{
+  if(!db||!io) return;
+  const att=mioTurno();
+  try{
+    if(att) await db.collection('turni').doc(att._id).update({fine:Date.now()});
+    else await db.collection('turni').add({medimagoId:io.id,nome:io.nome,cognome:io.cognome,casa:io.casa,inizio:Date.now(),fine:null});
+  }catch(err){ $('stato').textContent='Operazione non riuscita: riprova tra un momento.'; }
+});
+
+// Utilità
+const durata = ms => {const m=Math.max(0,Math.round(ms/60000));return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min';};
+const ora = ms => new Date(ms).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+const giorno = ms => new Date(ms).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const lung = t => (t.fine||Date.now())-t.inizio;
+const colore = c => COLORI[c]||'#888';
+
+function render(){
+  if(!io||$('vApp').classList.contains('hidden')) return;
+  const att=mioTurno(), orb=$('orb');
+  orb.classList.toggle('attivo',!!att);
+  orb.textContent=att?'Termina turno':'Inizia turno';
+  $('stato').innerHTML=att?'In servizio dalle <b>'+ora(att.inizio)+'</b> · '+durata(Date.now()-att.inizio):'Sei fuori servizio.';
+
+  const live=turni.filter(t=>!t.fine);
+  $('inServizio').innerHTML=live.length?live.map(t=>chip(t.medimagoId,t.nome,t.cognome,t.casa,true)).join(''):'<div class="vuoto">Nessun Medimago in servizio al momento.</div>';
+
+  const ord=[...medimaghi].sort((a,b)=>(a.cognome+a.nome).localeCompare(b.cognome+b.nome,'it'));
+  const inLive=new Set(live.map(t=>t.medimagoId));
+  $('elenco').innerHTML=ord.length?ord.map(m=>chip(m.id,m.nome,m.cognome,m.casa,inLive.has(m.id))).join(''):'<div class="vuoto">Ancora nessun Medimago registrato.</div>';
+
+  const chiusi=[...turni].sort((a,b)=>b.inizio-a.inizio), gr={};
+  chiusi.forEach(t=>{const g=giorno(t.inizio);(gr[g]=gr[g]||[]).push(t);});
+  const html=Object.entries(gr).map(([g,ts])=>'<div class="giorno"><h3>'+esc(g)+'</h3>'+ts.map(t=>
+    '<div class="riga" style="--casa:'+colore(t.casa)+'"><div><button class="nome" data-id="'+esc(t.medimagoId)+'">'+esc(t.nome+' '+t.cognome)+'</button> <small>'+esc(t.casa)+'</small></div>'+
+    '<div class="orari"><small>'+ora(t.inizio)+' – '+(t.fine?ora(t.fine):'in corso')+'</small></div>'+
+    '<div class="dur'+(t.fine?'':' on')+'">'+durata(lung(t))+'</div></div>').join('')+'</div>').join('');
+  $('giorni').innerHTML=html||'<div class="vuoto">Nessun turno registrato. Inizia il primo con il pulsante qui sopra.</div>';
+  if($('dlg').open) dettaglio($('dlg').dataset.id);
+}
+function chip(id,n,c,casa,live){
+  return '<button class="chip'+(live?' live':'')+'" style="--casa:'+colore(casa)+'" data-id="'+esc(id)+'"><span class="pt"></span>'+esc(n+' '+c)+'</button>';
+}
+
+// Dettaglio con ore totali
+function dettaglio(id){
+  const m=medimaghi.find(x=>x.id===id)||turni.find(t=>t.medimagoId===id);
+  const mio=turni.filter(t=>t.medimagoId===id).sort((a,b)=>b.inizio-a.inizio);
+  const nome=m?(m.nome+' '+m.cognome):id, casa=m?(m.casa):'';
+  const tot=mio.reduce((s,t)=>s+lung(t),0);
+  $('dlg').dataset.id=id;
+  $('dNome').textContent=nome; $('dCasa').textContent=casa?'Casa '+casa:'';
+  $('dOre').textContent=durata(tot);
+  $('dInfo').textContent=mio.length?('in '+mio.length+(mio.length===1?' turno':' turni')):'nessun turno ancora';
+  $('dStorico').innerHTML=mio.map(t=>'<li><span>'+new Date(t.inizio).toLocaleDateString('it-IT')+' · '+ora(t.inizio)+' – '+(t.fine?ora(t.fine):'in corso')+'</span><span class="dur">'+durata(lung(t))+'</span></li>').join('');
+  if(!$('dlg').open) $('dlg').showModal();
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b&&b.closest('#vApp'))dettaglio(b.dataset.id);});
+$('dChiudi').addEventListener('click',()=>$('dlg').close());
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close();});
+
+setInterval(render,30000);
+avvia();
+</script>
+</body>
+</html>

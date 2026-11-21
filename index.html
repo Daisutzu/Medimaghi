@@ -138,6 +138,13 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
 .mov .nota{color:var(--muto);font-style:italic;font-size:16px}
 .mov .quando{text-align:right;color:var(--muto);white-space:nowrap}
 .ok{min-height:1.4em;margin:8px 0 0;color:var(--dittamo)}
+.bx{margin:0 0 16px;padding:12px 14px;border-radius:10px;background:rgba(27,24,56,.7);border:1px solid rgba(217,181,107,.3)}
+.bx h3{font-size:15px;color:var(--oro);margin-bottom:6px}
+.bx .tt{display:flex;gap:18px;flex-wrap:wrap;color:var(--pergamena)}
+.bx .tt b{color:var(--dittamo);font-weight:500}
+.bx ul{list-style:none;margin:8px 0 0;padding:0;max-height:120px;overflow:auto;font-size:17px}
+.bx li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid rgba(167,159,196,.15)}
+.bx li span:last-child{color:var(--muto);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -213,6 +220,7 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
   <h2 id="dNome"></h2>
   <div id="dCasa" style="color:var(--muto)"></div>
   <div class="tot"><div class="n" id="dOre"></div><span id="dInfo"></span></div>
+  <div class="bx" id="dBaule"></div>
   <ul class="storico" id="dStorico"></ul>
   <button class="btn pericolo hidden" id="dElimina" type="button">Elimina medimago</button>
   <button class="btn chiudi" id="dChiudi" type="button">Chiudi</button>
@@ -354,7 +362,7 @@ function ascolta(){
   if(ascoltando) return; ascoltando=true;
   db.collection('medimaghi').onSnapshot(s=>{medimaghi=s.docs.map(d=>d.data());render();});
   db.collection('turni').onSnapshot(s=>{turni=s.docs.map(d=>({_id:d.id,...d.data()}));render();});
-  db.collection('baule_movimenti').onSnapshot(s=>{baule=s.docs.map(d=>({_id:d.id,...d.data()}));renderBaule();});
+  db.collection('baule_movimenti').onSnapshot(s=>{baule=s.docs.map(d=>({_id:d.id,...d.data()}));renderBaule();if($('dlg').open)dettaglio($('dlg').dataset.id);});
 }
 
 // Turni
@@ -412,6 +420,19 @@ function dettaglio(id){
   $('dNome').textContent=nome; $('dCasa').textContent=casa?'Casa '+casa:'';
   $('dOre').textContent=durata(tot);
   $('dInfo').textContent=mio.length?('in '+mio.length+(mio.length===1?' turno':' turni')):'nessun turno ancora';
+  const mb=baule.filter(r=>r.medimagoId===id);
+  if(mb.length){
+    const messo=mb.filter(r=>r.tipo==='deposito').reduce((s,r)=>s+r.quantita,0);
+    const tolto=mb.filter(r=>r.tipo==='prelievo').reduce((s,r)=>s+r.quantita,0);
+    const per=new Map();
+    mb.forEach(r=>{const k=chiave(r.categoria,r.oggetto);const v=per.get(k)||{oggetto:r.oggetto.trim(),messo:0,tolto:0};
+      if(r.tipo==='deposito')v.messo+=r.quantita;else v.tolto+=r.quantita;per.set(k,v);});
+    const righe=[...per.values()].sort((a,b)=>a.oggetto.localeCompare(b.oggetto,'it')).map(v=>
+      '<li><span>'+esc(v.oggetto)+'</span><span>'+(v.messo?'messo '+v.messo:'')+(v.messo&&v.tolto?' · ':'')+(v.tolto?'tolto '+v.tolto:'')+'</span></li>').join('');
+    $('dBaule').innerHTML='<h3>Baule condiviso</h3><div class="tt"><span>Messo: <b>'+messo+'</b></span><span>Tolto: <b>'+tolto+'</b></span></div><ul>'+righe+'</ul>';
+  } else {
+    $('dBaule').innerHTML='<h3>Baule condiviso</h3><span style="color:var(--muto)">Nessun movimento ancora.</span>';
+  }
   $('dStorico').innerHTML=mio.map(t=>'<li><span>'+new Date(t.inizio).toLocaleDateString('it-IT')+' · '+ora(t.inizio)+' – '+(t.fine?ora(t.fine):'in corso')+'</span><span class="dur">'+durata(lung(t))+'</span></li>').join('');
   if(!$('dlg').open) $('dlg').showModal();
 }

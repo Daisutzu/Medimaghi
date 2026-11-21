@@ -120,6 +120,24 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
 .btn.pericolo+.chiudi{margin-top:12px}
 .adminmsg{color:var(--errore);font-size:16px}
 .badge{padding:2px 10px;border-radius:999px;border:1px solid var(--oro);color:var(--oro-chiaro);font-size:15px}
+
+/* Baule condiviso */
+.btn-baule{margin-top:22px;padding:11px 24px;border-radius:999px;cursor:pointer;font-family:var(--font-t);font-weight:700;letter-spacing:.05em;
+  background:rgba(45,35,88,.7);border:1px solid var(--oro);color:var(--oro-chiaro);transition:box-shadow .15s}
+.btn-baule:hover{box-shadow:0 0 22px rgba(217,181,107,.35)}
+#dlgBaule{max-width:620px}
+#dlgBaule h3.sub{font-size:17px;color:var(--oro);margin:24px 0 4px}
+#dlgBaule h4{font-family:var(--font-t);font-size:15px;color:var(--oro-chiaro);margin:14px 0 6px}
+.voce{display:flex;justify-content:space-between;width:100%;gap:10px;padding:8px 12px;margin-bottom:5px;border-radius:8px;cursor:pointer;
+  background:rgba(27,24,56,.7);border:1px solid rgba(217,181,107,.25);text-align:left}
+.voce:hover{border-color:var(--oro)}
+.voce b{color:var(--dittamo);font-weight:500}
+.movimenti{list-style:none;margin:0;padding:0;max-height:280px;overflow:auto}
+.mov{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(27,24,56,.7);border-left:3px solid var(--dittamo)}
+.mov.prelievo{border-left-color:var(--oro)}
+.mov .nota{color:var(--muto);font-style:italic;font-size:16px}
+.mov .quando{text-align:right;color:var(--muto);white-space:nowrap}
+.ok{min-height:1.4em;margin:8px 0 0;color:var(--dittamo)}
 </style>
 </head>
 <body>
@@ -171,6 +189,7 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
     <div class="turno">
       <button class="orb" id="orb" type="button">Inizia turno</button>
       <div class="stato" id="stato"></div>
+      <button class="btn-baule" id="apriBaule" type="button">🧪 Baule condiviso</button>
     </div>
 
     <section class="blocco">
@@ -197,6 +216,39 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
   <ul class="storico" id="dStorico"></ul>
   <button class="btn pericolo hidden" id="dElimina" type="button">Elimina medimago</button>
   <button class="btn chiudi" id="dChiudi" type="button">Chiudi</button>
+</dialog>
+
+<dialog id="dlgBaule">
+  <h2>🧪 Baule condiviso</h2>
+  <div id="bContenuto"></div>
+
+  <h3 class="sub">Registra un movimento</h3>
+  <form id="fBaule" autocomplete="off">
+    <label for="bTipo">Cosa hai fatto?</label>
+    <select id="bTipo">
+      <option value="deposito">Ho messo nel baule</option>
+      <option value="prelievo">Ho tolto dal baule</option>
+    </select>
+    <label for="bCat">Tipo di oggetto</label>
+    <select id="bCat">
+      <option value="ingrediente">Ingrediente</option>
+      <option value="pozione">Pozione</option>
+    </select>
+    <label for="bOgg">Nome</label>
+    <input id="bOgg" list="bOggetti" required maxlength="60" placeholder="Es. Radice di zenzero">
+    <datalist id="bOggetti"></datalist>
+    <label for="bQta">Quantità</label>
+    <input id="bQta" type="number" min="1" max="9999" step="1" value="1" required>
+    <label for="bNota">Nota (facoltativa)</label>
+    <input id="bNota" maxlength="80">
+    <button class="btn" type="submit">Registra</button>
+    <p class="errore" id="eBaule" role="alert"></p>
+    <p class="ok" id="mBaule" role="status"></p>
+  </form>
+
+  <h3 class="sub">Ultimi movimenti</h3>
+  <ul class="movimenti" id="bLog"></ul>
+  <button class="btn chiudi" id="bChiudi" type="button">Chiudi</button>
 </dialog>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -241,6 +293,7 @@ function aggiornaAdmin(){
   $('admin').textContent=isAdmin?'Esci da amministratore':'Accesso amministratore';
   $('badgeAdmin').classList.toggle('hidden',!isAdmin);
   $('dElimina').classList.toggle('hidden',!isAdmin);
+  renderBaule();
 }
 if(configurato){
   firebase.auth().onAuthStateChanged(u=>{
@@ -260,7 +313,7 @@ $('admin').addEventListener('click',async()=>{
   }
 });
 
-let io=null, medimaghi=[], turni=[];
+let io=null, medimaghi=[], turni=[], baule=[];
 try{io=JSON.parse(LS.get('medimago')||'null')}catch(e){}
 
 const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -301,6 +354,7 @@ function ascolta(){
   if(ascoltando) return; ascoltando=true;
   db.collection('medimaghi').onSnapshot(s=>{medimaghi=s.docs.map(d=>d.data());render();});
   db.collection('turni').onSnapshot(s=>{turni=s.docs.map(d=>({_id:d.id,...d.data()}));render();});
+  db.collection('baule_movimenti').onSnapshot(s=>{baule=s.docs.map(d=>({_id:d.id,...d.data()}));renderBaule();});
 }
 
 // Turni
@@ -379,6 +433,66 @@ $('dElimina').addEventListener('click',async()=>{
   }catch(err){ alert('Eliminazione non riuscita. Controlla di aver fatto l\'accesso come amministratore.'); }
 });
 $('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close();});
+
+// ---- Baule condiviso ----
+const chiave=(c,o)=>c+'|'+o.trim().toLowerCase().replace(/\s+/g,' ');
+function giacenza(){
+  const m=new Map();
+  [...baule].sort((a,b)=>a.quando-b.quando).forEach(r=>{
+    const k=chiave(r.categoria,r.oggetto);
+    const v=m.get(k)||{categoria:r.categoria,oggetto:r.oggetto.trim(),qta:0};
+    v.qta+=r.tipo==='deposito'?r.quantita:-r.quantita;
+    m.set(k,v);
+  });
+  return [...m.values()];
+}
+function renderBaule(){
+  const g=giacenza(), perNome=(a,b)=>a.oggetto.localeCompare(b.oggetto,'it');
+  const gruppo=(cat,titolo)=>{
+    const l=g.filter(x=>x.categoria===cat&&x.qta>0).sort(perNome);
+    return '<h4>'+titolo+'</h4>'+(l.length
+      ?l.map(x=>'<button type="button" class="voce" data-cat="'+cat+'" data-og="'+esc(x.oggetto)+'"><span>'+esc(x.oggetto)+'</span><b>× '+x.qta+'</b></button>').join('')
+      :'<div class="vuoto">Nessuno al momento.</div>');
+  };
+  $('bContenuto').innerHTML=gruppo('ingrediente','Ingredienti')+gruppo('pozione','Pozioni');
+  $('bOggetti').innerHTML=[...new Set(g.map(x=>x.oggetto))].sort((a,b)=>a.localeCompare(b,'it')).map(o=>'<option value="'+esc(o)+'">').join('');
+  const l=[...baule].sort((a,b)=>b.quando-a.quando).slice(0,80);
+  $('bLog').innerHTML=l.length?l.map(r=>
+    '<li class="mov '+esc(r.tipo)+'"><div><b>'+esc(r.nome+' '+r.cognome)+'</b> '+(r.tipo==='deposito'?'ha messo':'ha tolto')+
+    ' <b>'+esc(r.quantita)+' × '+esc(r.oggetto)+'</b> <small>('+(r.categoria==='pozione'?'pozione':'ingrediente')+')</small>'+
+    (r.nota?'<div class="nota">'+esc(r.nota)+'</div>':'')+'</div>'+
+    '<div class="quando"><small>'+new Date(r.quando).toLocaleDateString('it-IT')+' '+ora(r.quando)+'</small>'+
+    (isAdmin?'<br><button class="link" type="button" data-del="'+esc(r._id)+'">Elimina</button>':'')+'</div></li>'
+  ).join(''):'<li class="vuoto">Nessun movimento registrato.</li>';
+}
+$('apriBaule').addEventListener('click',()=>{renderBaule();$('eBaule').textContent='';$('mBaule').textContent='';$('dlgBaule').showModal();});
+$('bChiudi').addEventListener('click',()=>$('dlgBaule').close());
+$('dlgBaule').addEventListener('click',e=>{
+  const r=$('dlgBaule').getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return $('dlgBaule').close();
+  const v=e.target.closest('.voce');
+  if(v){$('bTipo').value='prelievo';$('bCat').value=v.dataset.cat;$('bOgg').value=v.dataset.og;$('bQta').focus();$('bQta').select();return;}
+  const d=e.target.closest('[data-del]');
+  if(d&&isAdmin&&db&&confirm('Eliminare questo movimento dal registro? Non si può annullare.'))
+    db.collection('baule_movimenti').doc(d.dataset.del).delete().catch(()=>alert('Eliminazione non riuscita.'));
+});
+$('fBaule').addEventListener('submit',async e=>{
+  e.preventDefault(); $('eBaule').textContent=''; $('mBaule').textContent='';
+  if(!db||!io) return;
+  const tipo=$('bTipo').value, categoria=$('bCat').value, oggetto=$('bOgg').value.trim().replace(/\s+/g,' ');
+  const q=parseInt($('bQta').value,10), nota=$('bNota').value.trim();
+  if(!oggetto||!(q>=1)){$('eBaule').textContent='Indica cosa e quanti.';return;}
+  if(tipo==='prelievo'){
+    const voce=giacenza().find(x=>chiave(x.categoria,x.oggetto)===chiave(categoria,oggetto));
+    const disp=voce?voce.qta:0;
+    if(q>disp){$('eBaule').textContent=disp>0?('Nel baule ce ne sono solo '+disp+'.'):'Questo oggetto non è nel baule.';return;}
+  }
+  try{
+    await db.collection('baule_movimenti').add({tipo,categoria,oggetto,quantita:q,nota,medimagoId:io.id,nome:io.nome,cognome:io.cognome,casa:io.casa,quando:Date.now()});
+    $('mBaule').textContent=(tipo==='deposito'?'Messo nel baule: ':'Tolto dal baule: ')+q+' × '+oggetto+'.';
+    $('bOgg').value='';$('bQta').value=1;$('bNota').value='';
+  }catch(err){$('eBaule').textContent='Registrazione non riuscita. Riprova.';}
+});
 
 setInterval(render,30000);
 avvia();

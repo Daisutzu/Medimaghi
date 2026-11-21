@@ -115,6 +115,11 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
 .storico{max-height:200px;overflow:auto;margin:0;padding:0;list-style:none}
 .storico li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(167,159,196,.2)}
 .chiudi{margin-top:18px;width:100%}
+.btn.pericolo{margin-top:22px;background:transparent;border:1px solid var(--errore);color:var(--errore)}
+.btn.pericolo:hover{box-shadow:0 6px 22px rgba(255,138,138,.25)}
+.btn.pericolo+.chiudi{margin-top:12px}
+.adminmsg{color:var(--errore);font-size:16px}
+.badge{padding:2px 10px;border-radius:999px;border:1px solid var(--oro);color:var(--oro-chiaro);font-size:15px}
 </style>
 </head>
 <body>
@@ -158,7 +163,7 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
   <div class="hidden" id="vApp">
     <header class="top">
       <h1>🪄 Registro dei Medimaghi</h1>
-      <div class="io"><span>Medimago <b id="chiSono"></b></span><button class="link" id="esci" type="button">Cambia medimago</button></div>
+      <div class="io"><span>Medimago <b id="chiSono"></b></span><button class="link" id="esci" type="button">Cambia medimago</button><span class="badge hidden" id="badgeAdmin">Amministratore</span><button class="link" id="admin" type="button">Accesso amministratore</button><span class="adminmsg" id="adminMsg" role="alert"></span></div>
     </header>
 
     <div class="avviso hidden" id="avvisoCfg">Il database non è ancora collegato. Apri <b>index.html</b>, incolla la configurazione Firebase al posto di <b>INCOLLA_QUI</b> e ricarica la pagina.</div>
@@ -190,11 +195,13 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
   <div id="dCasa" style="color:var(--muto)"></div>
   <div class="tot"><div class="n" id="dOre"></div><span id="dInfo"></span></div>
   <ul class="storico" id="dStorico"></ul>
+  <button class="btn pericolo hidden" id="dElimina" type="button">Elimina medimago</button>
   <button class="btn chiudi" id="dChiudi" type="button">Chiudi</button>
 </dialog>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* ============ CONFIGURAZIONE ============ */
 // Hash SHA-256 della password. Quella predefinita è: dittamo
@@ -225,6 +232,33 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const configurato = !Object.values(FIREBASE_CONFIG).some(v=>v==="INCOLLA_QUI");
 let db=null;
 if(configurato){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();}
+
+// Amministratore: l'email serve solo a mostrare i comandi.
+// Chi può davvero cancellare lo decidono le regole del database.
+const ADMIN_EMAIL = "triveridante@gmail.com";
+let isAdmin=false;
+function aggiornaAdmin(){
+  $('admin').textContent=isAdmin?'Esci da amministratore':'Accesso amministratore';
+  $('badgeAdmin').classList.toggle('hidden',!isAdmin);
+  $('dElimina').classList.toggle('hidden',!isAdmin);
+}
+if(configurato){
+  firebase.auth().onAuthStateChanged(u=>{
+    isAdmin=!!u && u.emailVerified && (u.email||'').toLowerCase()===ADMIN_EMAIL;
+    if(u && !isAdmin){ firebase.auth().signOut(); $('adminMsg').textContent='Questo account non è amministratore.'; }
+    aggiornaAdmin();
+  });
+}
+$('admin').addEventListener('click',async()=>{
+  if(!configurato) return;
+  $('adminMsg').textContent='';
+  try{
+    if(isAdmin) await firebase.auth().signOut();
+    else await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  }catch(e){
+    if(e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request') $('adminMsg').textContent='Accesso non riuscito. Riprova.';
+  }
+});
 
 let io=null, medimaghi=[], turni=[];
 try{io=JSON.parse(LS.get('medimago')||'null')}catch(e){}
@@ -329,6 +363,21 @@ function dettaglio(id){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b&&b.closest('#vApp'))dettaglio(b.dataset.id);});
 $('dChiudi').addEventListener('click',()=>$('dlg').close());
+$('dElimina').addEventListener('click',async()=>{
+  if(!isAdmin||!db) return;
+  const id=$('dlg').dataset.id, m=medimaghi.find(x=>x.id===id);
+  const nome=m?(m.nome+' '+m.cognome):id;
+  const suoi=turni.filter(t=>t.medimagoId===id);
+  if(!confirm('Eliminare '+nome+' e i suoi '+suoi.length+(suoi.length===1?' turno':' turni')+'? Non si può annullare.')) return;
+  try{
+    const b=db.batch();
+    suoi.forEach(t=>b.delete(db.collection('turni').doc(t._id)));
+    b.delete(db.collection('medimaghi').doc(id));
+    await b.commit();
+    $('dlg').close();
+    if(io&&io.id===id){LS.del('medimago');io=null;avvia();}
+  }catch(err){ alert('Eliminazione non riuscita. Controlla di aver fatto l\'accesso come amministratore.'); }
+});
 $('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close();});
 
 setInterval(render,30000);

@@ -301,11 +301,7 @@ details.cartella .nuovo{padding:6px 14px 2px}
 
   <div id="cPaneLista">
     <div class="filtri">
-      <input id="cCerca" type="search" placeholder="Cerca per paziente o medimago" aria-label="Cerca tra le cartelle">
-      <select id="cFiltro" aria-label="Filtra le cartelle">
-        <option value="tutte">Tutte</option>
-        <option value="controllo">Da controllare</option>
-      </select>
+      <input id="cCerca" type="search" placeholder="Cerca tra le cartelle da controllare" aria-label="Cerca tra le cartelle">
     </div>
     <small id="cConta" style="color:var(--muto)"></small>
     <div id="cLista"></div>
@@ -643,36 +639,33 @@ function corpoCartella(r){
     campoC('Medimago curante',r.curante)+campoC('Aiutanti',r.aiutanti)+
     '<div class="cp"><small style="color:var(--muto)">Compilata il '+dataOra(r.quando)+(r.compilatoDa?' da '+esc(r.compilatoDa):'')+'</small>'+
     (r.modificatoDa?'<br><small style="color:var(--muto)">Ultima modifica il '+dataOra(r.modificatoIl)+' da '+esc(r.modificatoDa)+'</small>':'')+
-    (r.archiviata&&r.archiviataDa?'<br><small style="color:var(--muto)">📁 Archiviata il '+dataOra(r.archiviataIl)+' da '+esc(r.archiviataDa)+'</small>':'')+
     '<br><button class="link" type="button" data-mod="'+esc(r._id)+'">✏️ Modifica cartella</button>'+
-    (r.archiviata?' <button class="link" type="button" data-rip="'+esc(r._id)+'">↩️ Ripristina dall\'archivio</button>'
-      :(r.controllo?' <small style="color:var(--muto)">(per archiviarla, esegui prima il controllo)</small>'
-        :' <button class="link" type="button" data-arch="'+esc(r._id)+'">📁 Archivia</button>'))+
+    (r.controllo?'':' <button class="link" type="button" data-riapri="'+esc(r._id)+'">🔁 Richiedi un nuovo controllo</button>')+
     (isAdmin?' <button class="link" type="button" data-delc="'+esc(r._id)+'">Elimina cartella</button>':'')+'</div>';
 }
 function renderCartelle(){
-  const q=$('cCerca').value.trim().toLowerCase(), f=$('cFiltro').value;
+  const q=$('cCerca').value.trim().toLowerCase();
   const l=[...cartelle].sort((a,b)=>b.quando-a.quando).filter(r=>
-    !r.archiviata&&(f==='tutte'||r.controllo)&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
+    r.controllo&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
   // le schede aperte restano aperte quando i dati si aggiornano
   const aperte=new Set([...document.querySelectorAll('#cLista details[open]')].map(x=>x.dataset.cid));
   const vuoto=!cartelle.length?'Nessuna cartella clinica ancora. Compila la prima da "Nuova cartella".'
     :(q?'Nessuna cartella corrisponde alla ricerca.'
-    :(f==='controllo'?'Nessuna cartella da controllare.':'Nessuna cartella attiva: quelle archiviate sono nell\'Archivio.'));
+    :'Nessuna cartella da controllare. Le altre sono nell\'Archivio.');
   $('cLista').innerHTML=l.length?l.map(r=>
     '<details class="cartella" data-cid="'+esc(r._id)+'"'+(aperte.has(r._id)?' open':'')+'><summary><b>'+esc(r.nome+' '+r.cognome)+'</b><small>'+esc(r.casa)+' · '+esc(r.eta)+' anni</small>'+
     (r.controllo?'<span class="badge">Da controllare</span>':'')+(r.controllatoDa?'<span class="badge fatto">Controllato</span>':'')+
     '<small class="cd">'+new Date(r.quando).toLocaleDateString('it-IT')+' · curante: '+esc(r.curante)+'</small></summary>'+corpoCartella(r)+'</details>'
   ).join(''):'<div class="vuoto">'+vuoto+'</div>';
-  const tot=cartelle.filter(r=>!r.archiviata&&(f==='tutte'||r.controllo)).length;
+  const tot=cartelle.filter(r=>r.controllo).length;
   $('cConta').textContent=l.length+(l.length===1?' cartella':' cartelle')+(l.length!==tot?' su '+tot:'');
   renderArchivio();
   renderPazienti();
 }
-// Archivio: una cartella per ogni studente, con dentro le sue cartelle cliniche archiviate
+// Archivio (automatico): una cartella per ogni studente, con dentro le sue cartelle senza controlli da fare
 function renderArchivio(){
   const q=$('cCercaA').value.trim().toLowerCase(), g={};
-  cartelle.filter(r=>r.archiviata).forEach(r=>{const k=idDa(r.nome,r.cognome);(g[k]=g[k]||[]).push(r);});
+  cartelle.filter(r=>!r.controllo).forEach(r=>{const k=idDa(r.nome,r.cognome);(g[k]=g[k]||[]).push(r);});
   const fs=Object.entries(g).map(([k,rs])=>{rs.sort((a,b)=>b.quando-a.quando);return {k,rs,u:rs[0]};})
     .sort((a,b)=>(a.u.nome+' '+a.u.cognome).localeCompare(b.u.nome+' '+b.u.cognome,'it',{sensitivity:'base'}));
   const l=fs.filter(p=>!q||(p.u.nome+' '+p.u.cognome).toLowerCase().includes(q));
@@ -681,7 +674,7 @@ function renderArchivio(){
     '<details class="cartella" data-aid="'+esc(p.k)+'"'+(aperte.has(p.k)?' open':'')+'><summary>📁 <b>'+esc(p.u.nome+' '+p.u.cognome)+'</b><small>'+esc(p.u.casa)+'</small>'+
     '<span class="badge arch">'+p.rs.length+(p.rs.length===1?' cartella':' cartelle')+'</span></summary>'+
     p.rs.map(r=>'<div class="referto"><div class="cp"><h5>Cartella del '+dataOra(r.quando)+'</h5></div>'+corpoCartella(r)+'</div>').join('')+'</details>'
-  ).join(''):'<div class="vuoto">'+(!fs.length?'L\'Archivio è vuoto. Usa il pulsante "📁 Archivia" su una cartella: finirà qui, nella cartella con il nome dello studente.':'Nessuno studente corrisponde alla ricerca.')+'</div>';
+  ).join(''):'<div class="vuoto">'+(!fs.length?'L\'Archivio è vuoto. Qui finiscono da sole le cartelle che non hanno (più) un controllo da fare, ognuna nella cartella con il nome dello studente.':'Nessuno studente corrisponde alla ricerca.')+'</div>';
   $('cContaA').textContent=l.length+(l.length===1?' studente':' studenti')+(l.length!==fs.length?' su '+fs.length:'');
 }
 // Pazienti: una scheda per ogni paziente, creata in automatico con i suoi referti (le cartelle) in ordine di data
@@ -697,7 +690,6 @@ function renderPazienti(){
     const dc=p.rs.some(r=>r.controllo);
     return '<details class="cartella" data-pid="'+esc(p.k)+'"'+(aperte.has(p.k)?' open':'')+'><summary><b>'+esc(p.u.nome+' '+p.u.cognome)+'</b><small>'+esc(p.u.casa)+' · '+esc(p.u.eta)+' anni</small>'+
       '<span class="badge">'+p.rs.length+(p.rs.length===1?' referto':' referti')+'</span>'+(dc?'<span class="badge">Da controllare</span>':'')+
-      (p.rs.some(r=>r.archiviata)?'<span class="badge arch">📁 '+p.rs.filter(r=>r.archiviata).length+' in archivio</span>':'')+
       '<small class="cd">Ultimo referto: '+new Date(p.u.quando).toLocaleDateString('it-IT')+' · curante: '+esc(p.u.curante)+'</small></summary>'+
       '<div class="nuovo"><button class="btn-ok" type="button" data-nuovo="'+esc(p.k)+'">➕ Nuovo referto per '+esc(p.u.nome)+'</button></div>'+
       p.rs.map(r=>'<div class="referto"><div class="cp"><h5>Referto del '+dataOra(r.quando)+'</h5></div>'+corpoCartella(r)+'</div>').join('')+'</details>';
@@ -751,7 +743,6 @@ $('cEsistente').addEventListener('input',()=>{
 });
 $('cAnnulla').addEventListener('click',()=>{esciModifica();vaiCartelle('lista');});
 $('cCerca').addEventListener('input',renderCartelle);
-$('cFiltro').addEventListener('change',renderCartelle);
 $('dlgCartelle').addEventListener('click',e=>{
   if(clicFuori($('dlgCartelle'),e)) return $('dlgCartelle').close();
   const k=e.target.closest('[data-ok]');
@@ -759,32 +750,19 @@ $('dlgCartelle').addEventListener('click',e=>{
     if(!db||!io) return;
     if(confirm('Segnare il controllo come eseguito? Resterà registrato che lo hai fatto tu.'))
       db.collection('cartelle').doc(k.dataset.ok).update({controllo:false,controllatoDa:io.nome+' '+io.cognome,controllatoDaId:io.id,controllatoIl:Date.now()})
+        .then(()=>{const r=cartelle.find(x=>x._id===k.dataset.ok);$('mCartelle').textContent='Controllo eseguito'+(r?': la cartella di '+r.nome+' '+r.cognome+' è stata archiviata nella sua cartella.':'.');})
         .catch(()=>alert('Operazione non riuscita. Riprova.'));
     return;
   }
-  const ar=e.target.closest('[data-arch],[data-rip]');
-  if(ar){
+  const ri=e.target.closest('[data-riapri]');
+  if(ri){
     if(!db||!io) return;
-    const id=ar.dataset.arch||ar.dataset.rip, arch=!!ar.dataset.arch, r=cartelle.find(x=>x._id===id); if(!r) return;
-    const nm=r.nome+' '+r.cognome, stamp={archiviataDa:io.nome+' '+io.cognome,archiviataDaId:io.id,archiviataIl:Date.now()};
-    if(!arch){
-      if(confirm('Ripristinare questa cartella? Tornerà tra quelle attive.'))
-        db.collection('cartelle').doc(id).update({archiviata:false,...stamp})
-          .then(()=>{$('mCartelle').textContent='Cartella ripristinata.';})
-          .catch(()=>alert('Operazione non riuscita. Riprova.'));
-      return;
-    }
-    // si archiviano insieme tutte le cartelle dello stesso paziente (quelle con un controllo in sospeso restano attive)
-    const k=idDa(r.nome,r.cognome), stesse=cartelle.filter(x=>idDa(x.nome,x.cognome)===k&&!x.archiviata);
-    const pronte=stesse.filter(x=>!x.controllo), inSospeso=stesse.length-pronte.length;
-    const domanda=pronte.length>1
-      ?'Archiviare le '+pronte.length+' cartelle di «'+nm+'»? Finiranno insieme nella sua cartella dell\'Archivio.'+(inSospeso?'\n\n'+inSospeso+(inSospeso===1?' cartella resta attiva perché ha un controllo da eseguire.':' cartelle restano attive perché hanno un controllo da eseguire.'):'')
-      :'Archiviare questa cartella? Finirà nella cartella «'+nm+'» dell\'Archivio.'+(inSospeso?'\n\nLe altre '+inSospeso+(inSospeso===1?' cartella':' cartelle')+' di questo paziente restano attive perché hanno un controllo da eseguire.':'');
-    if(confirm(domanda)){
-      const batch=db.batch();
-      pronte.forEach(x=>batch.update(db.collection('cartelle').doc(x._id),{archiviata:true,...stamp}));
-      batch.commit()
-        .then(()=>{$('mCartelle').textContent=(pronte.length>1?pronte.length+' cartelle archiviate':'Cartella archiviata')+' nella cartella «'+nm+'»'+(inSospeso?'; '+inSospeso+(inSospeso===1?' resta attiva (controllo da eseguire).':' restano attive (controllo da eseguire).'):'.');})
+    const r=cartelle.find(x=>x._id===ri.dataset.riapri); if(!r) return;
+    if(confirm('Richiedere un nuovo controllo? La cartella tornerà in Consulta tra quelle da controllare.')){
+      const del=firebase.firestore.FieldValue.delete();
+      db.collection('cartelle').doc(r._id).update({controllo:true,controllatoDa:del,controllatoDaId:del,controllatoIl:del,
+        modificatoDa:io.nome+' '+io.cognome,modificatoDaId:io.id,modificatoIl:Date.now()})
+        .then(()=>{$('mCartelle').textContent='Cartella di '+r.nome+' '+r.cognome+' tornata tra quelle da controllare.';})
         .catch(()=>alert('Operazione non riuscita. Riprova.'));
     }
     return;
@@ -807,7 +785,6 @@ $('fCartella').addEventListener('submit',async e=>{
   if(!rec.nome||!rec.cognome||!rec.casa||!(eta>=0)||!rec.sintomi||!rec.cure||!rec.curante){$('eCartella').textContent='Compila tutti i campi obbligatori.';return;}
   if(modificaId){
     const vecchia=cartelle.find(x=>x._id===modificaId);
-    if(vecchia&&vecchia.archiviata&&rec.controllo){$('eCartella').textContent='Questa cartella è in archivio: ripristinala prima di richiedere un nuovo controllo.';return;}
     const upd={nome:rec.nome,cognome:rec.cognome,casa:rec.casa,eta,sintomi:rec.sintomi,cure:rec.cure,pozioni:rec.pozioni,
       controllo:rec.controllo,curante:rec.curante,aiutanti:rec.aiutanti,
       modificatoDa:io.nome+' '+io.cognome,modificatoDaId:io.id,modificatoIl:Date.now()};
@@ -819,7 +796,7 @@ $('fCartella').addEventListener('submit',async e=>{
     try{
       await db.collection('cartelle').doc(modificaId).update(upd);
       esciModifica(); vaiCartelle('lista');
-      $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' aggiornata.';
+      $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' aggiornata'+(rec.controllo?'.':' e archiviata nella sua cartella.');
     }catch(err){$('eCartella').textContent='Modifica non riuscita. Riprova.';}
     return;
   }
@@ -827,7 +804,7 @@ $('fCartella').addEventListener('submit',async e=>{
     await db.collection('cartelle').add(rec);
     $('fCartella').reset();
     vaiCartelle('lista');
-    $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' salvata.';
+    $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+(rec.controllo?' salvata (da controllare).':' salvata e archiviata nella sua cartella.');
   }catch(err){$('eCartella').textContent='Salvataggio non riuscito. Riprova.';}
 });
 

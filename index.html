@@ -146,6 +146,58 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
 .bx li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid rgba(167,159,196,.15)}
 .bx li span:last-child{color:var(--muto);white-space:nowrap}
 
+/* Appunti: pergamene */
+#dlgAppunti{max-width:760px}
+.rotolo{margin:14px 0}
+.rotolo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:14px;padding:11px 20px;border-radius:999px;
+  background:linear-gradient(180deg,#f6ead0,#dfc88f);color:#3b2a17;border:1px solid #9b6f2e;
+  box-shadow:inset 0 0 16px rgba(120,80,30,.28),0 3px 12px rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s}
+.rotolo>summary::-webkit-details-marker{display:none}
+.rotolo>summary:hover{transform:translateY(-1px);box-shadow:inset 0 0 16px rgba(120,80,30,.28),0 6px 18px rgba(217,181,107,.3)}
+.rotolo>summary .ico{font-size:28px;line-height:1}
+.rotolo>summary b{display:block;font-family:var(--font-t);font-size:17px;letter-spacing:.04em}
+.rotolo>summary small{color:#6b5230;font-size:15px;font-style:italic}
+.rotolo>summary::after{content:"▾";margin-left:auto;color:#8a5a2b;transition:transform .2s}
+.rotolo[open]>summary::after{transform:rotate(180deg)}
+.perg{position:relative;margin:22px 6px 12px;padding:38px 34px 26px;color:#3b2a17;
+  background:radial-gradient(ellipse at 50% 45%,#faf1d6 0%,#f3e5bb 62%,#e3cd97 100%);
+  border:2px solid #b8893c;border-radius:4px;
+  box-shadow:inset 0 0 46px rgba(139,94,40,.38),inset 0 0 6px rgba(120,80,30,.5),0 10px 26px rgba(0,0,0,.5);
+  outline:1px solid rgba(168,120,47,.75);outline-offset:-11px}
+.perg::before,.perg::after{content:"";position:absolute;left:-12px;right:-12px;height:17px;border-radius:9px;
+  background:linear-gradient(180deg,#6b4220,#c99a55 38%,#e3bd7a 52%,#7a4c24);box-shadow:0 3px 8px rgba(0,0,0,.5)}
+.perg::before{top:-11px}.perg::after{bottom:-11px}
+.perg .cn{position:absolute;color:#a8782f;font-size:15px;line-height:1}
+.perg .cn.a{top:15px;left:17px}.perg .cn.b{top:15px;right:17px}.perg .cn.c{bottom:15px;left:17px}.perg .cn.d{bottom:15px;right:17px}
+.pg-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--font-t);font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;color:#6b5230;padding-bottom:6px;border-bottom:1px solid rgba(168,120,47,.7);margin-bottom:12px}
+.pg-sub{margin:0;font-family:var(--font-t);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7a6440}
+.perg h3{font-size:30px;color:#1d4a3a;margin:2px 0 4px;letter-spacing:.02em;line-height:1.15}
+.pg-orn{display:flex;align-items:center;gap:10px;color:#a8782f;margin:2px 0 8px}
+.pg-orn i{flex:1;height:1px;background:linear-gradient(90deg,transparent,#a8782f)}
+.pg-orn i:last-child{background:linear-gradient(90deg,#a8782f,transparent)}
+.pg-ob{margin:0 0 16px;font-style:italic;color:#6b5a3c}
+.perg h4{font-size:20px;color:#1d4a3a;margin:20px 0 6px;letter-spacing:.02em}
+.perg p{margin:0 0 10px;color:#3b2a17;font-style:normal}
+.pg-tab{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:17px}
+.pg-tab th{background:#1d4a3a;color:#f8efd3;font-family:var(--font-t);font-size:13px;letter-spacing:.06em;text-align:left;padding:8px 12px}
+.pg-tab td{padding:8px 12px;vertical-align:top;border-bottom:1px solid rgba(168,120,47,.35)}
+.pg-tab tbody tr:nth-child(even){background:rgba(168,120,47,.13)}
+.pg-tab td:first-child{font-weight:500;color:#1d4a3a;white-space:nowrap}
+.pg-list{margin:4px 0 8px;padding-left:22px}
+.pg-list li{margin:3px 0}
+.pg-list li::marker{color:#a8782f}
+.pg-box{margin:16px 0 4px;padding:12px 16px;border-left:4px solid #a8782f;background:rgba(139,94,40,.14);border-radius:0 8px 8px 0}
+.pg-box b{letter-spacing:.04em}
+.pg-foot{display:flex;justify-content:space-between;gap:12px;margin-top:22px;padding-top:8px;border-top:1px solid rgba(168,120,47,.7);
+  font-family:var(--font-t);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b5230}
+.pg-inc{font-size:20px;line-height:1.6;margin-top:10px}
+.pg-inc b{font-family:var(--font-t);color:#1d4a3a;font-size:26px;letter-spacing:.03em}
+@keyframes srotola{from{opacity:0;transform:scaleY(.9);transform-origin:top}to{opacity:1;transform:none}}
+.rotolo[open] .perg{animation:srotola .35s ease-out}
+@media (prefers-reduced-motion:reduce){.rotolo[open] .perg{animation:none}}
+@media (max-width:560px){.perg{padding:34px 20px 24px;margin:20px 2px 10px}.perg h3{font-size:25px}.pg-tab td:first-child{white-space:normal}.pg-tab{font-size:16px}}
+
 /* Cartelle cliniche */
 .azioni{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:22px}
 .azioni .btn-baule{margin-top:0}
@@ -226,6 +278,7 @@ details.cartella .nuovo{padding:6px 14px 2px}
       <div class="azioni">
         <button class="btn-baule" id="apriBaule" type="button">🧪 Baule condiviso</button>
         <button class="btn-baule" id="apriCartelle" type="button">📋 Cartelle cliniche</button>
+        <button class="btn-baule" id="apriAppunti" type="button">📜 Appunti</button>
       </div>
     </div>
 
@@ -357,6 +410,126 @@ details.cartella .nuovo{padding:6px 14px 2px}
   </form>
 
   <button class="btn chiudi" id="cChiudi" type="button">Chiudi</button>
+</dialog>
+
+<dialog id="dlgAppunti">
+  <h2>📜 Appunti</h2>
+  <p style="color:var(--muto);font-style:italic;margin:6px 0 4px">Tocca una pergamena per srotolarla.</p>
+
+  <details class="rotolo">
+    <summary><span class="ico">📜</span><span><b>Origini della Medimagia</b><small>Lezione 01 · Formazione di base</small></span></summary>
+    <article class="perg">
+      <i class="cn a">✦</i><i class="cn b">✦</i><i class="cn c">✦</i><i class="cn d">✦</i>
+      <div class="pg-head"><span>Ospedale San Mungo ✦ Formazione medimagica</span><span>Anno 1890–1891</span></div>
+      <p class="pg-sub">Lezione 01 · Formazione di base</p>
+      <h3>Origini della Medimagia</h3>
+      <div class="pg-orn"><i></i>◆<i></i></div>
+      <p class="pg-ob">Obiettivo: comprendere perché nacque il San Mungo e quale missione guida l’istituzione.</p>
+      <h4>La nascita dell’ospedale</h4>
+      <p>L’Ospedale San Mungo per Malattie e Ferite Magiche venne fondato dal guaritore Mungo Bonham, vissuto tra il 1560 e il 1659. Le sue origini risalgono al periodo compreso tra la fine del XVI e l’inizio del XVII secolo.</p>
+      <p>La sua fondazione rispose a un bisogno preciso: offrire assistenza a coloro che subivano danni impossibili da trattare mediante i soli rimedi comuni. La diffusione di bacchette, pozioni e manufatti incantati richiedeva professionisti preparati ad affrontare effetti imprevisti, maledizioni e patologie di natura magica.</p>
+      <h4>La missione del San Mungo</h4>
+      <ul class="pg-list">
+        <li>Accogliere e curare pazienti con malattie e lesioni magiche.</li>
+        <li>Approfondire lo studio di incantesimi, preparati e metodi di guarigione.</li>
+        <li>Formare guaritori capaci di riconoscere i limiti delle proprie competenze.</li>
+        <li>Custodire la riservatezza dei pazienti e la segretezza della comunità magica.</li>
+      </ul>
+      <h4>Cronologia essenziale</h4>
+      <table class="pg-tab">
+        <thead><tr><th>Periodo</th><th>Evento</th></tr></thead>
+        <tbody>
+          <tr><td>1560–1659</td><td>Vita del guaritore Mungo Bonham.</td></tr>
+          <tr><td>Fine XVI – inizio XVII secolo</td><td>Fondazione dell’Ospedale San Mungo.</td></tr>
+          <tr><td>1722–1741</td><td>Dilys Derwent esercita la professione di guaritrice al San Mungo.</td></tr>
+          <tr><td>1741–1768</td><td>Dilys Derwent dirige la Scuola di Hogwarts.</td></tr>
+          <tr><td>1890–1891</td><td>Formazione medimagica presso Hogwarts.</td></tr>
+        </tbody>
+      </table>
+      <div class="pg-foot"><span>Dorian Willow · Manuale di Medimagia</span><span>03</span></div>
+    </article>
+  </details>
+
+  <details class="rotolo">
+    <summary><span class="ico">📜</span><span><b>Il Medimago e i suoi doveri</b><small>Lezione 02 · Formazione di base</small></span></summary>
+    <article class="perg">
+      <i class="cn a">✦</i><i class="cn b">✦</i><i class="cn c">✦</i><i class="cn d">✦</i>
+      <div class="pg-head"><span>Ospedale San Mungo ✦ Formazione medimagica</span><span>Anno 1890–1891</span></div>
+      <p class="pg-sub">Lezione 02 · Formazione di base</p>
+      <h3>Il Medimago e i suoi doveri</h3>
+      <div class="pg-orn"><i></i>◆<i></i></div>
+      <p class="pg-ob">Obiettivo: comprendere responsabilità, riservatezza e comportamento professionale.</p>
+      <h4>La figura del guaritore</h4>
+      <p>Il Medimago assiste persone colpite da malattie, incidenti e alterazioni di origine magica. Non basta conoscere una formula: occorrono attenzione, disciplina, studio delle cause e capacità di comunicare chiaramente con colleghi e pazienti.</p>
+      <p>Di fronte a un ferito, l’allievo deve innanzitutto riconoscere i segni di pericolo, mettere in sicurezza l’ambiente e richiedere un guaritore qualificato quando il caso supera la propria preparazione.</p>
+      <h4>I cinque doveri fondamentali</h4>
+      <table class="pg-tab">
+        <thead><tr><th>Dovere</th><th>Applicazione</th></tr></thead>
+        <tbody>
+          <tr><td>Prudenza</td><td>Non usare formule o preparati di cui non si conoscono gli effetti.</td></tr>
+          <tr><td>Osservazione</td><td>Annotare sintomi, circostanze e mutamenti rilevanti.</td></tr>
+          <tr><td>Riservatezza</td><td>Non divulgare diagnosi o informazioni personali.</td></tr>
+          <tr><td>Collaborazione</td><td>Trasmettere i dati essenziali agli altri guaritori.</td></tr>
+          <tr><td>Rispetto</td><td>Ascoltare il paziente senza pregiudizi verso la sua Casa o provenienza.</td></tr>
+        </tbody>
+      </table>
+      <h4>Prima accoglienza</h4>
+      <p>All’arrivo del paziente il personale raccoglie, quando possibile, nome, circostanze dell’evento, sintomi osservati e informazioni su eventuali rimedi già somministrati. Ogni dato viene riportato senza interpretazioni affrettate. La causa presunta non deve essere confusa con una diagnosi certa.</p>
+      <div class="pg-box"><b>PRINCIPIO DI CONDOTTA.</b> Una cura eseguita senza comprenderne le conseguenze può aggravare il danno. Di fronte a una situazione non riconosciuta, si sospende l’intervento e si chiama assistenza specialistica.</div>
+      <div class="pg-foot"><span>Dorian Willow · Manuale di Medimagia</span><span>04</span></div>
+    </article>
+  </details>
+
+  <details class="rotolo">
+    <summary><span class="ico">📜</span><span><b>I reparti del San Mungo</b><small>Lezione 03 · Formazione di base</small></span></summary>
+    <article class="perg">
+      <i class="cn a">✦</i><i class="cn b">✦</i><i class="cn c">✦</i><i class="cn d">✦</i>
+      <div class="pg-head"><span>Ospedale San Mungo ✦ Formazione medimagica</span><span>Anno 1890–1891</span></div>
+      <p class="pg-sub">Lezione 03 · Formazione di base</p>
+      <h3>I reparti del San Mungo</h3>
+      <div class="pg-orn"><i></i>◆<i></i></div>
+      <p class="pg-ob">Obiettivo: distinguere le principali aree di cura e indirizzare i pazienti in modo corretto.</p>
+      <h4>Organizzazione delle specializzazioni</h4>
+      <p>L’attività dell’ospedale è suddivisa in aree di competenza. La corretta individuazione dell’origine del problema permette di richiedere l’aiuto del personale più adatto e riduce il rischio di interventi inappropriati.</p>
+      <table class="pg-tab">
+        <thead><tr><th>Area di cura</th><th>Casi tipici</th></tr></thead>
+        <tbody>
+          <tr><td>Incidenti da manufatti</td><td>Esplosioni di calderoni, effetti di bacchette difettose, oggetti incantati.</td></tr>
+          <tr><td>Ferite da creature magiche</td><td>Morsi, graffi, ustioni o lesioni causate da creature.</td></tr>
+          <tr><td>Malattie magiche</td><td>Patologie contagiose, febbri e alterazioni di origine soprannaturale.</td></tr>
+          <tr><td>Avvelenamenti</td><td>Esposizione a pozioni, sostanze vegetali o veleni magici.</td></tr>
+          <tr><td>Lesioni da incantesimi</td><td>Maledizioni, fatture, effetti di magie non correttamente eseguite.</td></tr>
+        </tbody>
+      </table>
+      <h4>Orientamento del paziente</h4>
+      <p>Il personale osserva l’evento che ha causato il problema, raccoglie i sintomi e individua l’area specialistica probabile. Quando una ferita ha origini sconosciute, il paziente deve essere esaminato da un guaritore prima di essere assegnato a una disciplina specifica.</p>
+      <div class="pg-foot"><span>Dorian Willow · Manuale di Medimagia</span><span>05</span></div>
+    </article>
+  </details>
+
+  <details class="rotolo">
+    <summary><span class="ico">📜</span><span><b>Episkey</b><small>Incantesimo di riparazione</small></span></summary>
+    <article class="perg">
+      <i class="cn a">✦</i><i class="cn b">✦</i><i class="cn c">✦</i><i class="cn d">✦</i>
+      <p class="pg-sub">Incantesimo</p>
+      <h3>Episkey</h3>
+      <div class="pg-orn"><i></i>◆<i></i></div>
+      <p class="pg-inc"><b>Episkey</b> — Incanto di riparazione usato nelle lesioni lievi e circoscritte: piccoli tagli, labbra spaccate e traumi semplici, come un naso fratturato. Richiede un’identificazione preliminare della parte lesa e non sostituisce le cure per danni profondi o maledetti.</p>
+    </article>
+  </details>
+
+  <details class="rotolo">
+    <summary><span class="ico">📜</span><span><b>Statum</b><small>Incantesimo diagnostico</small></span></summary>
+    <article class="perg">
+      <i class="cn a">✦</i><i class="cn b">✦</i><i class="cn c">✦</i><i class="cn d">✦</i>
+      <p class="pg-sub">Incantesimo</p>
+      <h3>Statum</h3>
+      <div class="pg-orn"><i></i>◆<i></i></div>
+      <p class="pg-inc"><b>Statum</b> — Incanto diagnostico che aiuta a rilevare condizioni e alterazioni del paziente senza guarirle. È il primo ausilio per distinguere una semplice ferita da un problema che richiede osservazione o trasferimento al reparto competente.</p>
+    </article>
+  </details>
+
+  <button class="btn chiudi" id="aChiudi" type="button">Chiudi</button>
 </dialog>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -728,6 +901,10 @@ function vaiCartelle(p){
   $('cTabNuova').setAttribute('aria-selected',p==='nuova');
   if(p==='nuova'&&!modificaId&&!$('cCurante').value&&io) $('cCurante').value=io.nome+' '+io.cognome;
 }
+$('apriAppunti').addEventListener('click',()=>$('dlgAppunti').showModal());
+$('aChiudi').addEventListener('click',()=>$('dlgAppunti').close());
+$('dlgAppunti').addEventListener('pointerdown',()=>rettDown.set($('dlgAppunti'),$('dlgAppunti').getBoundingClientRect()),true);
+$('dlgAppunti').addEventListener('click',e=>{if(clicFuori($('dlgAppunti'),e))$('dlgAppunti').close();});
 $('apriCartelle').addEventListener('click',()=>{esciModifica();$('mCartelle').textContent='';renderCartelle();vaiCartelle('lista');$('dlgCartelle').showModal();});
 $('cChiudi').addEventListener('click',()=>$('dlgCartelle').close());
 $('cTabLista').addEventListener('click',()=>{esciModifica();vaiCartelle('lista');});

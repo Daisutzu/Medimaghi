@@ -145,6 +145,26 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
 .bx ul{list-style:none;margin:8px 0 0;padding:0;max-height:120px;overflow:auto;font-size:17px}
 .bx li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid rgba(167,159,196,.15)}
 .bx li span:last-child{color:var(--muto);white-space:nowrap}
+
+/* Cartelle cliniche */
+.azioni{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:22px}
+.azioni .btn-baule{margin-top:0}
+#dlgCartelle{max-width:720px}
+.tabs{display:flex;gap:8px;margin:14px 0 8px}
+.tabs button{flex:1;padding:9px 12px;border-radius:999px;cursor:pointer;background:transparent;border:1px solid rgba(217,181,107,.4);
+  color:var(--pergamena);font-family:var(--font-t);font-weight:700;letter-spacing:.04em}
+.tabs button[aria-selected="true"]{background:linear-gradient(180deg,var(--oro-chiaro),var(--oro));color:var(--notte);border-color:transparent}
+.filtri{display:flex;gap:10px;margin:10px 0 6px}
+.filtri input{flex:1}
+.filtri select{width:auto}
+details.cartella{margin:8px 0;border-radius:10px;background:rgba(27,24,56,.7);border:1px solid rgba(217,181,107,.25)}
+details.cartella[open]{border-color:var(--oro)}
+details.cartella summary{cursor:pointer;padding:10px 14px;display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline}
+details.cartella summary .cd{flex-basis:100%;color:var(--muto)}
+.cp{padding:0 14px 10px}
+.cp h5{margin:8px 0 2px;font-family:var(--font-t);font-size:14px;color:var(--oro);letter-spacing:.04em;font-weight:500}
+.cp p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.cform textarea{width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(217,181,107,.35);background:rgba(14,16,32,.7);resize:vertical;min-height:84px;font:inherit;color:inherit}
 </style>
 </head>
 <body>
@@ -196,7 +216,10 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
     <div class="turno">
       <button class="orb" id="orb" type="button">Inizia turno</button>
       <div class="stato" id="stato"></div>
-      <button class="btn-baule" id="apriBaule" type="button">🧪 Baule condiviso</button>
+      <div class="azioni">
+        <button class="btn-baule" id="apriBaule" type="button">🧪 Baule condiviso</button>
+        <button class="btn-baule" id="apriCartelle" type="button">📋 Cartelle cliniche</button>
+      </div>
     </div>
 
     <section class="blocco">
@@ -259,6 +282,60 @@ dialog h2{color:var(--oro-chiaro);font-size:22px}
   <button class="btn chiudi" id="bChiudi" type="button">Chiudi</button>
 </dialog>
 
+<dialog id="dlgCartelle">
+  <h2>📋 Cartelle cliniche</h2>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="cTabLista" aria-selected="true">Consulta</button>
+    <button type="button" role="tab" id="cTabNuova" aria-selected="false">Nuova cartella</button>
+  </div>
+  <p class="ok" id="mCartelle" role="status"></p>
+
+  <div id="cPaneLista">
+    <div class="filtri">
+      <input id="cCerca" type="search" placeholder="Cerca per paziente o medimago" aria-label="Cerca tra le cartelle">
+      <select id="cFiltro" aria-label="Filtra le cartelle">
+        <option value="tutte">Tutte</option>
+        <option value="controllo">Da controllare</option>
+      </select>
+    </div>
+    <small id="cConta" style="color:var(--muto)"></small>
+    <div id="cLista"></div>
+  </div>
+
+  <form id="fCartella" class="cform hidden" autocomplete="off">
+    <label for="cNome">Nome</label>
+    <input id="cNome" required maxlength="60">
+    <label for="cCognome">Cognome</label>
+    <input id="cCognome" required maxlength="60">
+    <label for="cCasa">Casa</label>
+    <select id="cCasa" required>
+      <option value="" disabled selected>Scegli la casa</option>
+      <option>Grifondoro</option><option>Serpeverde</option><option>Corvonero</option><option>Tassorosso</option><option>Nessuna</option>
+    </select>
+    <label for="cEta">Età</label>
+    <input id="cEta" type="number" min="0" max="999" step="1" required>
+    <label for="cSintomi">Quali sintomi presentava il paziente?</label>
+    <textarea id="cSintomi" required maxlength="3000"></textarea>
+    <label for="cCure">Quali cure gli sono state fornite?</label>
+    <textarea id="cCure" required maxlength="3000"></textarea>
+    <label for="cPozioni">Quali pozioni sono state somministrate?</label>
+    <textarea id="cPozioni" maxlength="3000" placeholder="Se nessuna, lascia vuoto"></textarea>
+    <label for="cControllo">Il paziente dovrà essere controllato nei giorni seguenti da un medimago?</label>
+    <select id="cControllo">
+      <option value="no">No</option>
+      <option value="si">Sì</option>
+    </select>
+    <label for="cCurante">Nome del medimago curante</label>
+    <input id="cCurante" required maxlength="80">
+    <label for="cAiutanti">Nome di eventuali aiutanti</label>
+    <input id="cAiutanti" maxlength="200" placeholder="Se nessuno, lascia vuoto">
+    <button class="btn" type="submit">Salva cartella</button>
+    <p class="errore" id="eCartella" role="alert"></p>
+  </form>
+
+  <button class="btn chiudi" id="cChiudi" type="button">Chiudi</button>
+</dialog>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -302,6 +379,7 @@ function aggiornaAdmin(){
   $('badgeAdmin').classList.toggle('hidden',!isAdmin);
   $('dElimina').classList.toggle('hidden',!isAdmin);
   renderBaule();
+  renderCartelle();
 }
 if(configurato){
   firebase.auth().onAuthStateChanged(u=>{
@@ -321,7 +399,7 @@ $('admin').addEventListener('click',async()=>{
   }
 });
 
-let io=null, medimaghi=[], turni=[], baule=[];
+let io=null, medimaghi=[], turni=[], baule=[], cartelle=[];
 try{io=JSON.parse(LS.get('medimago')||'null')}catch(e){}
 
 const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -363,6 +441,7 @@ function ascolta(){
   db.collection('medimaghi').onSnapshot(s=>{medimaghi=s.docs.map(d=>d.data());render();});
   db.collection('turni').onSnapshot(s=>{turni=s.docs.map(d=>({_id:d.id,...d.data()}));render();});
   db.collection('baule_movimenti').onSnapshot(s=>{baule=s.docs.map(d=>({_id:d.id,...d.data()}));renderBaule();if($('dlg').open)dettaglio($('dlg').dataset.id);});
+  db.collection('cartelle').onSnapshot(s=>{cartelle=s.docs.map(d=>({_id:d.id,...d.data()}));renderCartelle();});
 }
 
 // Turni
@@ -513,6 +592,60 @@ $('fBaule').addEventListener('submit',async e=>{
     $('mBaule').textContent=(tipo==='deposito'?'Messo nel baule: ':'Tolto dal baule: ')+q+' × '+oggetto+'.';
     $('bOgg').value='';$('bQta').value=1;$('bNota').value='';
   }catch(err){$('eBaule').textContent='Registrazione non riuscita. Riprova.';}
+});
+
+// ---- Cartelle cliniche ----
+function renderCartelle(){
+  const q=$('cCerca').value.trim().toLowerCase(), solo=$('cFiltro').value==='controllo';
+  const l=[...cartelle].sort((a,b)=>b.quando-a.quando).filter(r=>
+    (!solo||r.controllo)&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
+  const campo=(t,v)=>'<div class="cp"><h5>'+t+'</h5><p>'+(v?esc(v):'—')+'</p></div>';
+  $('cLista').innerHTML=l.length?l.map(r=>
+    '<details class="cartella"><summary><b>'+esc(r.nome+' '+r.cognome)+'</b><small>'+esc(r.casa)+' · '+esc(r.eta)+' anni</small>'+
+    (r.controllo?'<span class="badge">Da controllare</span>':'')+
+    '<small class="cd">'+new Date(r.quando).toLocaleDateString('it-IT')+' · curante: '+esc(r.curante)+'</small></summary>'+
+    campo('Sintomi',r.sintomi)+campo('Cure fornite',r.cure)+campo('Pozioni somministrate',r.pozioni)+
+    campo('Controllo nei giorni seguenti',r.controllo?'Sì':'No')+campo('Medimago curante',r.curante)+campo('Aiutanti',r.aiutanti)+
+    '<div class="cp"><small style="color:var(--muto)">Compilata il '+new Date(r.quando).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+
+    (r.compilatoDa?' da '+esc(r.compilatoDa):'')+'</small>'+
+    (isAdmin?'<br><button class="link" type="button" data-delc="'+esc(r._id)+'">Elimina cartella</button>':'')+'</div></details>'
+  ).join(''):'<div class="vuoto">'+(cartelle.length?'Nessuna cartella corrisponde alla ricerca.':'Nessuna cartella clinica ancora. Compila la prima da "Nuova cartella".')+'</div>';
+  $('cConta').textContent=l.length+(l.length===1?' cartella':' cartelle')+(l.length!==cartelle.length?' su '+cartelle.length:'');
+}
+function vaiCartelle(p){
+  $('cPaneLista').classList.toggle('hidden',p!=='lista');
+  $('fCartella').classList.toggle('hidden',p!=='nuova');
+  $('cTabLista').setAttribute('aria-selected',p==='lista');
+  $('cTabNuova').setAttribute('aria-selected',p==='nuova');
+  if(p==='nuova'&&!$('cCurante').value&&io) $('cCurante').value=io.nome+' '+io.cognome;
+}
+$('apriCartelle').addEventListener('click',()=>{$('mCartelle').textContent='';renderCartelle();vaiCartelle('lista');$('dlgCartelle').showModal();});
+$('cChiudi').addEventListener('click',()=>$('dlgCartelle').close());
+$('cTabLista').addEventListener('click',()=>vaiCartelle('lista'));
+$('cTabNuova').addEventListener('click',()=>{$('mCartelle').textContent='';vaiCartelle('nuova');});
+$('cCerca').addEventListener('input',renderCartelle);
+$('cFiltro').addEventListener('change',renderCartelle);
+$('dlgCartelle').addEventListener('click',e=>{
+  const r=$('dlgCartelle').getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return $('dlgCartelle').close();
+  const d=e.target.closest('[data-delc]');
+  if(d&&isAdmin&&db&&confirm('Eliminare questa cartella clinica? Non si può annullare.'))
+    db.collection('cartelle').doc(d.dataset.delc).delete().catch(()=>alert('Eliminazione non riuscita.'));
+});
+$('fCartella').addEventListener('submit',async e=>{
+  e.preventDefault(); $('eCartella').textContent='';
+  if(!db||!io) return;
+  const v=id=>$(id).value.trim(), eta=parseInt($('cEta').value,10);
+  const rec={nome:v('cNome'),cognome:v('cCognome'),casa:$('cCasa').value,eta,sintomi:v('cSintomi'),cure:v('cCure'),pozioni:v('cPozioni'),
+    controllo:$('cControllo').value==='si',curante:v('cCurante'),aiutanti:v('cAiutanti'),
+    compilatoDa:io.nome+' '+io.cognome,compilatoDaId:io.id,quando:Date.now()};
+  if(!rec.nome||!rec.cognome||!rec.casa||!(eta>=0)||!rec.sintomi||!rec.cure||!rec.curante){$('eCartella').textContent='Compila tutti i campi obbligatori.';return;}
+  try{
+    await db.collection('cartelle').add(rec);
+    $('fCartella').reset();
+    vaiCartelle('lista');
+    $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' salvata.';
+  }catch(err){$('eCartella').textContent='Salvataggio non riuscito. Riprova.';}
 });
 
 setInterval(render,30000);

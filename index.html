@@ -401,7 +401,8 @@ details.cartella .nuovo{padding:6px 14px 2px}
       <option value="si">Sì</option>
     </select>
     <label for="cCurante">Nome del medimago curante</label>
-    <input id="cCurante" required maxlength="80">
+    <input id="cCurante" required maxlength="80" list="dlMedimaghi" placeholder="Scrivi il nome o scegli dall'elenco">
+    <datalist id="dlMedimaghi"></datalist>
     <label for="cAiutanti">Nome di eventuali aiutanti</label>
     <input id="cAiutanti" maxlength="200" placeholder="Se nessuno, lascia vuoto">
     <button class="btn" type="submit" id="cSalva">Salva cartella</button>
@@ -670,6 +671,7 @@ function render(){
   $('inServizio').innerHTML=live.length?live.map(t=>chip(t.medimagoId,t.nome,t.cognome,t.casa,true)).join(''):'<div class="vuoto">Nessun Medimago in servizio al momento.</div>';
 
   const ord=[...medimaghi].sort(alfa);
+  $('dlMedimaghi').innerHTML=ord.map(m=>'<option value="'+esc(m.nome+' '+m.cognome)+'"></option>').join('');
   const inLive=new Set(live.map(t=>t.medimagoId));
   $('elenco').innerHTML=ord.length?ord.map(m=>chip(m.id,m.nome,m.cognome,m.casa,inLive.has(m.id))).join(''):'<div class="vuoto">Ancora nessun Medimago registrato.</div>';
 
@@ -899,7 +901,6 @@ function vaiCartelle(p){
   $('fCartella').classList.toggle('hidden',p!=='nuova');
   $('cTabLista').setAttribute('aria-selected',p==='lista');
   $('cTabNuova').setAttribute('aria-selected',p==='nuova');
-  if(p==='nuova'&&!modificaId&&!$('cCurante').value&&io) $('cCurante').value=io.nome+' '+io.cognome;
 }
 $('apriAppunti').addEventListener('click',()=>$('dlgAppunti').showModal());
 $('aChiudi').addEventListener('click',()=>$('dlgAppunti').close());

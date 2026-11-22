@@ -496,10 +496,11 @@ function render(){
   orb.textContent=att?'Termina turno':'Inizia turno';
   $('stato').innerHTML=att?'In servizio dalle <b>'+ora(att.inizio)+'</b> · '+durata(Date.now()-att.inizio):'Sei fuori servizio.';
 
-  const live=turni.filter(t=>!t.fine);
+  const alfa=(a,b)=>(a.nome+' '+a.cognome).localeCompare(b.nome+' '+b.cognome,'it',{sensitivity:'base'});
+  const live=turni.filter(t=>!t.fine).sort(alfa);
   $('inServizio').innerHTML=live.length?live.map(t=>chip(t.medimagoId,t.nome,t.cognome,t.casa,true)).join(''):'<div class="vuoto">Nessun Medimago in servizio al momento.</div>';
 
-  const ord=[...medimaghi].sort((a,b)=>(a.cognome+a.nome).localeCompare(b.cognome+b.nome,'it'));
+  const ord=[...medimaghi].sort(alfa);
   const inLive=new Set(live.map(t=>t.medimagoId));
   $('elenco').innerHTML=ord.length?ord.map(m=>chip(m.id,m.nome,m.cognome,m.casa,inLive.has(m.id))).join(''):'<div class="vuoto">Ancora nessun Medimago registrato.</div>';
 
@@ -665,7 +666,7 @@ function renderArchivio(){
   const q=$('cCercaA').value.trim().toLowerCase(), g={};
   cartelle.filter(r=>r.archiviata).forEach(r=>{const k=idDa(r.nome,r.cognome);(g[k]=g[k]||[]).push(r);});
   const fs=Object.entries(g).map(([k,rs])=>{rs.sort((a,b)=>b.quando-a.quando);return {k,rs,u:rs[0]};})
-    .sort((a,b)=>(a.u.cognome+' '+a.u.nome).localeCompare(b.u.cognome+' '+b.u.nome,'it'));
+    .sort((a,b)=>(a.u.nome+' '+a.u.cognome).localeCompare(b.u.nome+' '+b.u.cognome,'it',{sensitivity:'base'}));
   const l=fs.filter(p=>!q||(p.u.nome+' '+p.u.cognome).toLowerCase().includes(q));
   const aperte=new Set([...document.querySelectorAll('#cListaA > details[open]')].map(x=>x.dataset.aid));
   $('cListaA').innerHTML=l.length?l.map(p=>
@@ -680,7 +681,7 @@ function renderPazienti(){
   const q=$('cCercaP').value.trim().toLowerCase(), g={};
   cartelle.forEach(r=>{const k=idDa(r.nome,r.cognome);(g[k]=g[k]||[]).push(r);});
   const ps=Object.entries(g).map(([k,rs])=>{rs.sort((a,b)=>b.quando-a.quando);return {k,rs,u:rs[0]};})
-    .sort((a,b)=>(a.u.cognome+' '+a.u.nome).localeCompare(b.u.cognome+' '+b.u.nome,'it'));
+    .sort((a,b)=>(a.u.nome+' '+a.u.cognome).localeCompare(b.u.nome+' '+b.u.cognome,'it',{sensitivity:'base'}));
   $('dlPazienti').innerHTML=ps.map(p=>'<option value="'+esc(p.u.nome+' '+p.u.cognome)+'"></option>').join('');
   const l=ps.filter(p=>!q||(p.u.nome+' '+p.u.cognome).toLowerCase().includes(q));
   const aperte=new Set([...document.querySelectorAll('#cListaP details[open]')].map(x=>x.dataset.pid));

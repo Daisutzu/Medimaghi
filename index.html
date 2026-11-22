@@ -164,6 +164,9 @@ details.cartella summary .cd{flex-basis:100%;color:var(--muto)}
 .cp{padding:0 14px 10px}
 .cp h5{margin:8px 0 2px;font-family:var(--font-t);font-size:14px;color:var(--oro);letter-spacing:.04em;font-weight:500}
 .cp p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.badge.fatto{border-color:var(--dittamo);color:var(--dittamo)}
+.btn-ok{margin-top:6px;padding:8px 18px;border-radius:999px;cursor:pointer;background:transparent;border:1px solid var(--dittamo);color:var(--dittamo);font-family:var(--font-t);font-weight:700;letter-spacing:.03em}
+.btn-ok:hover{box-shadow:0 0 18px rgba(127,216,174,.3)}
 .cform textarea{width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(217,181,107,.35);background:rgba(14,16,32,.7);resize:vertical;min-height:84px;font:inherit;color:inherit}
 </style>
 </head>
@@ -600,12 +603,19 @@ function renderCartelle(){
   const l=[...cartelle].sort((a,b)=>b.quando-a.quando).filter(r=>
     (!solo||r.controllo)&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
   const campo=(t,v)=>'<div class="cp"><h5>'+t+'</h5><p>'+(v?esc(v):'—')+'</p></div>';
+  const stato=r=>r.controllatoDa
+    ?'Sì — eseguito il '+new Date(r.controllatoIl).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+' da '+r.controllatoDa
+    :(r.controllo?'Sì — ancora da eseguire':'No');
+  // le schede aperte restano aperte quando i dati si aggiornano
+  const aperte=new Set([...document.querySelectorAll('#cLista details[open]')].map(x=>x.dataset.cid));
   $('cLista').innerHTML=l.length?l.map(r=>
-    '<details class="cartella"><summary><b>'+esc(r.nome+' '+r.cognome)+'</b><small>'+esc(r.casa)+' · '+esc(r.eta)+' anni</small>'+
-    (r.controllo?'<span class="badge">Da controllare</span>':'')+
+    '<details class="cartella" data-cid="'+esc(r._id)+'"'+(aperte.has(r._id)?' open':'')+'><summary><b>'+esc(r.nome+' '+r.cognome)+'</b><small>'+esc(r.casa)+' · '+esc(r.eta)+' anni</small>'+
+    (r.controllo?'<span class="badge">Da controllare</span>':'')+(r.controllatoDa?'<span class="badge fatto">Controllato</span>':'')+
     '<small class="cd">'+new Date(r.quando).toLocaleDateString('it-IT')+' · curante: '+esc(r.curante)+'</small></summary>'+
     campo('Sintomi',r.sintomi)+campo('Cure fornite',r.cure)+campo('Pozioni somministrate',r.pozioni)+
-    campo('Controllo nei giorni seguenti',r.controllo?'Sì':'No')+campo('Medimago curante',r.curante)+campo('Aiutanti',r.aiutanti)+
+    campo('Controllo nei giorni seguenti',stato(r))+
+    (r.controllo?'<div class="cp"><button class="btn-ok" type="button" data-ok="'+esc(r._id)+'">Controllo eseguito</button></div>':'')+
+    campo('Medimago curante',r.curante)+campo('Aiutanti',r.aiutanti)+
     '<div class="cp"><small style="color:var(--muto)">Compilata il '+new Date(r.quando).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+
     (r.compilatoDa?' da '+esc(r.compilatoDa):'')+'</small>'+
     (isAdmin?'<br><button class="link" type="button" data-delc="'+esc(r._id)+'">Elimina cartella</button>':'')+'</div></details>'
@@ -628,6 +638,14 @@ $('cFiltro').addEventListener('change',renderCartelle);
 $('dlgCartelle').addEventListener('click',e=>{
   const r=$('dlgCartelle').getBoundingClientRect();
   if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return $('dlgCartelle').close();
+  const k=e.target.closest('[data-ok]');
+  if(k){
+    if(!db||!io) return;
+    if(confirm('Segnare il controllo come eseguito? Resterà registrato che lo hai fatto tu.'))
+      db.collection('cartelle').doc(k.dataset.ok).update({controllo:false,controllatoDa:io.nome+' '+io.cognome,controllatoDaId:io.id,controllatoIl:Date.now()})
+        .catch(()=>alert('Operazione non riuscita. Riprova.'));
+    return;
+  }
   const d=e.target.closest('[data-delc]');
   if(d&&isAdmin&&db&&confirm('Eliminare questa cartella clinica? Non si può annullare.'))
     db.collection('cartelle').doc(d.dataset.delc).delete().catch(()=>alert('Eliminazione non riuscita.'));

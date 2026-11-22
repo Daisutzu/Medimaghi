@@ -165,6 +165,9 @@ details.cartella summary .cd{flex-basis:100%;color:var(--muto)}
 .cp h5{margin:8px 0 2px;font-family:var(--font-t);font-size:14px;color:var(--oro);letter-spacing:.04em;font-weight:500}
 .cp p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .badge.fatto{border-color:var(--dittamo);color:var(--dittamo)}
+.referto{margin:8px 10px 0;border-top:1px dashed rgba(217,181,107,.35);padding-top:4px}
+.referto>.cp:first-child h5{font-size:16px;color:var(--oro-chiaro)}
+details.cartella .nuovo{padding:6px 14px 2px}
 .btn-ok{margin-top:6px;padding:8px 18px;border-radius:999px;cursor:pointer;background:transparent;border:1px solid var(--dittamo);color:var(--dittamo);font-family:var(--font-t);font-weight:700;letter-spacing:.03em}
 .btn-ok:hover{box-shadow:0 0 18px rgba(127,216,174,.3)}
 .cform textarea{width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(217,181,107,.35);background:rgba(14,16,32,.7);resize:vertical;min-height:84px;font:inherit;color:inherit}
@@ -289,6 +292,7 @@ details.cartella summary .cd{flex-basis:100%;color:var(--muto)}
   <h2>📋 Cartelle cliniche</h2>
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="cTabLista" aria-selected="true">Consulta</button>
+    <button type="button" role="tab" id="cTabPazienti" aria-selected="false">Pazienti</button>
     <button type="button" role="tab" id="cTabNuova" aria-selected="false">Nuova cartella</button>
   </div>
   <p class="ok" id="mCartelle" role="status"></p>
@@ -297,15 +301,27 @@ details.cartella summary .cd{flex-basis:100%;color:var(--muto)}
     <div class="filtri">
       <input id="cCerca" type="search" placeholder="Cerca per paziente o medimago" aria-label="Cerca tra le cartelle">
       <select id="cFiltro" aria-label="Filtra le cartelle">
-        <option value="tutte">Tutte</option>
         <option value="controllo">Da controllare</option>
+        <option value="archivio">Archivio</option>
+        <option value="tutte">Tutte</option>
       </select>
     </div>
     <small id="cConta" style="color:var(--muto)"></small>
     <div id="cLista"></div>
   </div>
 
+  <div id="cPanePazienti" class="hidden">
+    <div class="filtri"><input id="cCercaP" type="search" placeholder="Cerca un paziente" aria-label="Cerca un paziente"></div>
+    <small id="cContaP" style="color:var(--muto)"></small>
+    <div id="cListaP"></div>
+  </div>
+
   <form id="fCartella" class="cform hidden" autocomplete="off">
+    <div id="cEsRiga">
+      <label for="cEsistente">Paziente già in archivio (facoltativo)</label>
+      <input id="cEsistente" list="dlPazienti" placeholder="Scrivi per cercare e compilare in automatico">
+      <datalist id="dlPazienti"></datalist>
+    </div>
     <label for="cNome">Nome</label>
     <input id="cNome" required maxlength="60">
     <label for="cCognome">Cognome</label>
@@ -599,36 +615,69 @@ $('fBaule').addEventListener('submit',async e=>{
 });
 
 // ---- Cartelle cliniche ----
+const campoC=(t,v)=>'<div class="cp"><h5>'+t+'</h5><p>'+(v?esc(v):'—')+'</p></div>';
+const dataOra=t=>new Date(t).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'});
+const statoC=r=>r.controllatoDa
+  ?'Sì — eseguito il '+dataOra(r.controllatoIl)+' da '+r.controllatoDa
+  :(r.controllo?'Sì — ancora da eseguire':'No');
+function corpoCartella(r){
+  return campoC('Sintomi',r.sintomi)+campoC('Cure fornite',r.cure)+campoC('Pozioni somministrate',r.pozioni)+
+    campoC('Controllo nei giorni seguenti',statoC(r))+
+    (r.controllo?'<div class="cp"><button class="btn-ok" type="button" data-ok="'+esc(r._id)+'">Controllo eseguito</button></div>':'')+
+    campoC('Medimago curante',r.curante)+campoC('Aiutanti',r.aiutanti)+
+    '<div class="cp"><small style="color:var(--muto)">Compilata il '+dataOra(r.quando)+(r.compilatoDa?' da '+esc(r.compilatoDa):'')+'</small>'+
+    (r.modificatoDa?'<br><small style="color:var(--muto)">Ultima modifica il '+dataOra(r.modificatoIl)+' da '+esc(r.modificatoDa)+'</small>':'')+
+    '<br><button class="link" type="button" data-mod="'+esc(r._id)+'">✏️ Modifica cartella</button>'+
+    (isAdmin?' <button class="link" type="button" data-delc="'+esc(r._id)+'">Elimina cartella</button>':'')+'</div>';
+}
 function renderCartelle(){
-  const q=$('cCerca').value.trim().toLowerCase(), solo=$('cFiltro').value==='controllo';
+  const q=$('cCerca').value.trim().toLowerCase(), f=$('cFiltro').value;
   const l=[...cartelle].sort((a,b)=>b.quando-a.quando).filter(r=>
-    (!solo||r.controllo)&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
-  const campo=(t,v)=>'<div class="cp"><h5>'+t+'</h5><p>'+(v?esc(v):'—')+'</p></div>';
-  const stato=r=>r.controllatoDa
-    ?'Sì — eseguito il '+new Date(r.controllatoIl).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+' da '+r.controllatoDa
-    :(r.controllo?'Sì — ancora da eseguire':'No');
+    (f==='tutte'||(f==='controllo'?r.controllo:!r.controllo))&&(!q||(r.nome+' '+r.cognome+' '+r.curante+' '+(r.aiutanti||'')).toLowerCase().includes(q)));
   // le schede aperte restano aperte quando i dati si aggiornano
   const aperte=new Set([...document.querySelectorAll('#cLista details[open]')].map(x=>x.dataset.cid));
+  const vuoto=!cartelle.length?'Nessuna cartella clinica ancora. Compila la prima da "Nuova cartella".'
+    :(q?'Nessuna cartella corrisponde alla ricerca.'
+    :(f==='controllo'?'Nessuna cartella da controllare. Quelle senza controlli da fare sono nell\'Archivio.':'L\'Archivio è vuoto: ci finiscono le cartelle che non hanno bisogno di essere ricontrollate.'));
   $('cLista').innerHTML=l.length?l.map(r=>
     '<details class="cartella" data-cid="'+esc(r._id)+'"'+(aperte.has(r._id)?' open':'')+'><summary><b>'+esc(r.nome+' '+r.cognome)+'</b><small>'+esc(r.casa)+' · '+esc(r.eta)+' anni</small>'+
     (r.controllo?'<span class="badge">Da controllare</span>':'')+(r.controllatoDa?'<span class="badge fatto">Controllato</span>':'')+
-    '<small class="cd">'+new Date(r.quando).toLocaleDateString('it-IT')+' · curante: '+esc(r.curante)+'</small></summary>'+
-    campo('Sintomi',r.sintomi)+campo('Cure fornite',r.cure)+campo('Pozioni somministrate',r.pozioni)+
-    campo('Controllo nei giorni seguenti',stato(r))+
-    (r.controllo?'<div class="cp"><button class="btn-ok" type="button" data-ok="'+esc(r._id)+'">Controllo eseguito</button></div>':'')+
-    campo('Medimago curante',r.curante)+campo('Aiutanti',r.aiutanti)+
-    '<div class="cp"><small style="color:var(--muto)">Compilata il '+new Date(r.quando).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+
-    (r.compilatoDa?' da '+esc(r.compilatoDa):'')+'</small>'+
-    (r.modificatoDa?'<br><small style="color:var(--muto)">Ultima modifica il '+new Date(r.modificatoIl).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})+' da '+esc(r.modificatoDa)+'</small>':'')+
-    '<br><button class="link" type="button" data-mod="'+esc(r._id)+'">✏️ Modifica cartella</button>'+
-    (isAdmin?' <button class="link" type="button" data-delc="'+esc(r._id)+'">Elimina cartella</button>':'')+'</div></details>'
-  ).join(''):'<div class="vuoto">'+(cartelle.length?'Nessuna cartella corrisponde alla ricerca.':'Nessuna cartella clinica ancora. Compila la prima da "Nuova cartella".')+'</div>';
-  $('cConta').textContent=l.length+(l.length===1?' cartella':' cartelle')+(l.length!==cartelle.length?' su '+cartelle.length:'');
+    '<small class="cd">'+new Date(r.quando).toLocaleDateString('it-IT')+' · curante: '+esc(r.curante)+'</small></summary>'+corpoCartella(r)+'</details>'
+  ).join(''):'<div class="vuoto">'+vuoto+'</div>';
+  const tot=f==='tutte'?cartelle.length:cartelle.filter(r=>f==='controllo'?r.controllo:!r.controllo).length;
+  $('cConta').textContent=l.length+(l.length===1?' cartella':' cartelle')+(l.length!==tot?' su '+tot:'');
+  renderPazienti();
+}
+// Pazienti: una scheda per ogni paziente, creata in automatico con i suoi referti (le cartelle) in ordine di data
+function renderPazienti(){
+  const q=$('cCercaP').value.trim().toLowerCase(), g={};
+  cartelle.forEach(r=>{const k=idDa(r.nome,r.cognome);(g[k]=g[k]||[]).push(r);});
+  const ps=Object.entries(g).map(([k,rs])=>{rs.sort((a,b)=>b.quando-a.quando);return {k,rs,u:rs[0]};})
+    .sort((a,b)=>(a.u.cognome+' '+a.u.nome).localeCompare(b.u.cognome+' '+b.u.nome,'it'));
+  $('dlPazienti').innerHTML=ps.map(p=>'<option value="'+esc(p.u.nome+' '+p.u.cognome)+'"></option>').join('');
+  const l=ps.filter(p=>!q||(p.u.nome+' '+p.u.cognome).toLowerCase().includes(q));
+  const aperte=new Set([...document.querySelectorAll('#cListaP details[open]')].map(x=>x.dataset.pid));
+  $('cListaP').innerHTML=l.length?l.map(p=>{
+    const dc=p.rs.some(r=>r.controllo);
+    return '<details class="cartella" data-pid="'+esc(p.k)+'"'+(aperte.has(p.k)?' open':'')+'><summary><b>'+esc(p.u.nome+' '+p.u.cognome)+'</b><small>'+esc(p.u.casa)+' · '+esc(p.u.eta)+' anni</small>'+
+      '<span class="badge">'+p.rs.length+(p.rs.length===1?' referto':' referti')+'</span>'+(dc?'<span class="badge">Da controllare</span>':'')+
+      '<small class="cd">Ultimo referto: '+new Date(p.u.quando).toLocaleDateString('it-IT')+' · curante: '+esc(p.u.curante)+'</small></summary>'+
+      '<div class="nuovo"><button class="btn-ok" type="button" data-nuovo="'+esc(p.k)+'">➕ Nuovo referto per '+esc(p.u.nome)+'</button></div>'+
+      p.rs.map(r=>'<div class="referto"><div class="cp"><h5>Referto del '+dataOra(r.quando)+'</h5></div>'+corpoCartella(r)+'</div>').join('')+'</details>';
+  }).join(''):'<div class="vuoto">'+(cartelle.length?'Nessun paziente corrisponde alla ricerca.':'Nessun paziente ancora: la scheda si crea da sola alla prima cartella compilata.')+'</div>';
+  $('cContaP').textContent=l.length+(l.length===1?' paziente':' pazienti')+(l.length!==ps.length?' su '+ps.length:'');
+}
+function compilaPaziente(r){
+  $('cNome').value=r.nome; $('cCognome').value=r.cognome; $('cCasa').value=r.casa; $('cEta').value=r.eta;
+}
+function nuovoPer(k){
+  const r=cartelle.filter(x=>idDa(x.nome,x.cognome)===k).sort((a,b)=>b.quando-a.quando)[0]; if(!r) return;
+  esciModifica(); $('mCartelle').textContent=''; $('eCartella').textContent=''; compilaPaziente(r); vaiCartelle('nuova');
 }
 let modificaId=null;
 function esciModifica(){
   modificaId=null; $('fCartella').reset();
-  $('cTabNuova').textContent='Nuova cartella'; $('cSalva').textContent='Salva cartella'; $('cAnnulla').classList.add('hidden');
+  $('cTabNuova').textContent='Nuova cartella'; $('cSalva').textContent='Salva cartella'; $('cAnnulla').classList.add('hidden'); $('cEsRiga').classList.remove('hidden');
 }
 function iniziaModifica(id){
   const r=cartelle.find(x=>x._id===id); if(!r) return;
@@ -636,11 +685,13 @@ function iniziaModifica(id){
   $('cNome').value=r.nome; $('cCognome').value=r.cognome; $('cCasa').value=r.casa; $('cEta').value=r.eta;
   $('cSintomi').value=r.sintomi; $('cCure').value=r.cure; $('cPozioni').value=r.pozioni||'';
   $('cControllo').value=r.controllo?'si':'no'; $('cCurante').value=r.curante; $('cAiutanti').value=r.aiutanti||'';
-  $('cTabNuova').textContent='Modifica cartella'; $('cSalva').textContent='Salva modifiche'; $('cAnnulla').classList.remove('hidden');
+  $('cTabNuova').textContent='Modifica cartella'; $('cSalva').textContent='Salva modifiche'; $('cAnnulla').classList.remove('hidden'); $('cEsRiga').classList.add('hidden');
   vaiCartelle('nuova');
 }
 function vaiCartelle(p){
   $('cPaneLista').classList.toggle('hidden',p!=='lista');
+  $('cPanePazienti').classList.toggle('hidden',p!=='pazienti');
+  $('cTabPazienti').setAttribute('aria-selected',p==='pazienti');
   $('fCartella').classList.toggle('hidden',p!=='nuova');
   $('cTabLista').setAttribute('aria-selected',p==='lista');
   $('cTabNuova').setAttribute('aria-selected',p==='nuova');
@@ -650,6 +701,13 @@ $('apriCartelle').addEventListener('click',()=>{esciModifica();$('mCartelle').te
 $('cChiudi').addEventListener('click',()=>$('dlgCartelle').close());
 $('cTabLista').addEventListener('click',()=>{esciModifica();vaiCartelle('lista');});
 $('cTabNuova').addEventListener('click',()=>{$('mCartelle').textContent='';vaiCartelle('nuova');});
+$('cTabPazienti').addEventListener('click',()=>{esciModifica();$('mCartelle').textContent='';vaiCartelle('pazienti');});
+$('cCercaP').addEventListener('input',renderPazienti);
+$('cEsistente').addEventListener('input',()=>{
+  const v=$('cEsistente').value.trim().toLowerCase(); if(!v) return;
+  const r=[...cartelle].sort((a,b)=>b.quando-a.quando).find(x=>(x.nome+' '+x.cognome).toLowerCase()===v);
+  if(r) compilaPaziente(r);
+});
 $('cAnnulla').addEventListener('click',()=>{esciModifica();vaiCartelle('lista');});
 $('cCerca').addEventListener('input',renderCartelle);
 $('cFiltro').addEventListener('change',renderCartelle);
@@ -664,6 +722,8 @@ $('dlgCartelle').addEventListener('click',e=>{
         .catch(()=>alert('Operazione non riuscita. Riprova.'));
     return;
   }
+  const nu=e.target.closest('[data-nuovo]');
+  if(nu){nuovoPer(nu.dataset.nuovo);return;}
   const m=e.target.closest('[data-mod]');
   if(m){iniziaModifica(m.dataset.mod);return;}
   const d=e.target.closest('[data-delc]');
@@ -691,7 +751,7 @@ $('fCartella').addEventListener('submit',async e=>{
     try{
       await db.collection('cartelle').doc(modificaId).update(upd);
       esciModifica(); vaiCartelle('lista');
-      $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' aggiornata.';
+      $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' aggiornata'+(rec.controllo?'.':' e conservata nell\'Archivio.');
     }catch(err){$('eCartella').textContent='Modifica non riuscita. Riprova.';}
     return;
   }
@@ -699,7 +759,7 @@ $('fCartella').addEventListener('submit',async e=>{
     await db.collection('cartelle').add(rec);
     $('fCartella').reset();
     vaiCartelle('lista');
-    $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' salvata.';
+    $('mCartelle').textContent='Cartella di '+rec.nome+' '+rec.cognome+' salvata'+(rec.controllo?' (da controllare).':' e conservata nell\'Archivio.');
   }catch(err){$('eCartella').textContent='Salvataggio non riuscito. Riprova.';}
 });
 

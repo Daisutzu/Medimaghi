@@ -758,11 +758,27 @@ $('dlgCartelle').addEventListener('click',e=>{
   if(ar){
     if(!db||!io) return;
     const id=ar.dataset.arch||ar.dataset.rip, arch=!!ar.dataset.arch, r=cartelle.find(x=>x._id===id); if(!r) return;
-    const nm=r.nome+' '+r.cognome;
-    if(confirm(arch?'Archiviare questa cartella? Finirà nella cartella «'+nm+'» dell\'Archivio.':'Ripristinare questa cartella? Tornerà tra quelle attive.'))
-      db.collection('cartelle').doc(id).update({archiviata:arch,archiviataDa:io.nome+' '+io.cognome,archiviataDaId:io.id,archiviataIl:Date.now()})
-        .then(()=>{$('mCartelle').textContent=arch?'Cartella archiviata nella cartella «'+nm+'».':'Cartella ripristinata.';})
+    const nm=r.nome+' '+r.cognome, stamp={archiviataDa:io.nome+' '+io.cognome,archiviataDaId:io.id,archiviataIl:Date.now()};
+    if(!arch){
+      if(confirm('Ripristinare questa cartella? Tornerà tra quelle attive.'))
+        db.collection('cartelle').doc(id).update({archiviata:false,...stamp})
+          .then(()=>{$('mCartelle').textContent='Cartella ripristinata.';})
+          .catch(()=>alert('Operazione non riuscita. Riprova.'));
+      return;
+    }
+    // si archiviano insieme tutte le cartelle dello stesso paziente (quelle con un controllo in sospeso restano attive)
+    const k=idDa(r.nome,r.cognome), stesse=cartelle.filter(x=>idDa(x.nome,x.cognome)===k&&!x.archiviata);
+    const pronte=stesse.filter(x=>!x.controllo), inSospeso=stesse.length-pronte.length;
+    const domanda=pronte.length>1
+      ?'Archiviare le '+pronte.length+' cartelle di «'+nm+'»? Finiranno insieme nella sua cartella dell\'Archivio.'+(inSospeso?'\n\n'+inSospeso+(inSospeso===1?' cartella resta attiva perché ha un controllo da eseguire.':' cartelle restano attive perché hanno un controllo da eseguire.'):'')
+      :'Archiviare questa cartella? Finirà nella cartella «'+nm+'» dell\'Archivio.'+(inSospeso?'\n\nLe altre '+inSospeso+(inSospeso===1?' cartella':' cartelle')+' di questo paziente restano attive perché hanno un controllo da eseguire.':'');
+    if(confirm(domanda)){
+      const batch=db.batch();
+      pronte.forEach(x=>batch.update(db.collection('cartelle').doc(x._id),{archiviata:true,...stamp}));
+      batch.commit()
+        .then(()=>{$('mCartelle').textContent=(pronte.length>1?pronte.length+' cartelle archiviate':'Cartella archiviata')+' nella cartella «'+nm+'»'+(inSospeso?'; '+inSospeso+(inSospeso===1?' resta attiva (controllo da eseguire).':' restano attive (controllo da eseguire).'):'.');})
         .catch(()=>alert('Operazione non riuscita. Riprova.'));
+    }
     return;
   }
   const nu=e.target.closest('[data-nuovo]');

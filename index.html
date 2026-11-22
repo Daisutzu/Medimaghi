@@ -595,9 +595,17 @@ function renderBaule(){
 }
 $('apriBaule').addEventListener('click',()=>{renderBaule();$('eBaule').textContent='';$('mBaule').textContent='';$('dlgBaule').showModal();});
 $('bChiudi').addEventListener('click',()=>$('dlgBaule').close());
+// clic fuori dal riquadro = chiudi. Si usa la posizione del riquadro al momento della pressione: se il clic cambia il contenuto
+// (es. cambio scheda) il riquadro si rimpicciolisce e il clic non deve essere scambiato per un clic fuori. I clic da tastiera non chiudono.
+const rettDown=new WeakMap();
+function clicFuori(d,e){
+  if(!e.detail) return false;
+  const r=rettDown.get(d)||d.getBoundingClientRect();
+  return e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom;
+}
+['dlgBaule','dlgCartelle'].forEach(id=>$(id).addEventListener('pointerdown',()=>rettDown.set($(id),$(id).getBoundingClientRect()),true));
 $('dlgBaule').addEventListener('click',e=>{
-  const r=$('dlgBaule').getBoundingClientRect();
-  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return $('dlgBaule').close();
+  if(clicFuori($('dlgBaule'),e)) return $('dlgBaule').close();
   const v=e.target.closest('.voce');
   if(v){$('bTipo').value='prelievo';$('bCat').value=v.dataset.cat;$('bOgg').value=v.dataset.og;$('bQta').focus();$('bQta').select();return;}
   const d=e.target.closest('[data-del]');
@@ -745,8 +753,7 @@ $('cAnnulla').addEventListener('click',()=>{esciModifica();vaiCartelle('lista');
 $('cCerca').addEventListener('input',renderCartelle);
 $('cFiltro').addEventListener('change',renderCartelle);
 $('dlgCartelle').addEventListener('click',e=>{
-  const r=$('dlgCartelle').getBoundingClientRect();
-  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return $('dlgCartelle').close();
+  if(clicFuori($('dlgCartelle'),e)) return $('dlgCartelle').close();
   const k=e.target.closest('[data-ok]');
   if(k){
     if(!db||!io) return;
